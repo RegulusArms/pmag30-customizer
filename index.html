@@ -432,16 +432,22 @@
     };
 
     if (img){
-      fitTransform();
+      computeFitScale();
+      syncZoomSlider();
     }
     buildStage();
     updateHandles();
   }
 
   // ---- fit / transform helpers ----
-  function fitTransform(){
+  function computeFitScale(){
     const cbb = bg.clipBBoxRect;
     fitScale = Math.max(cbb.w/img.naturalW, cbb.h/img.naturalH) || 1;
+  }
+
+  function fitTransform(){
+    computeFitScale();
+    const cbb = bg.clipBBoxRect;
     xform = { cx: cbb.x + cbb.w/2, cy: cbb.y + cbb.h/2, scale: fitScale, rot: 0 };
     syncZoomSlider();
     syncRotationSlider();
@@ -795,6 +801,19 @@
   window.addEventListener("scroll", updateHandles, true);
 
   // ---- export ----
+  function buildExportFilename(){
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    const timestamp = now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate())
+      + "-" + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());
+    const shape = BUILTIN_SHAPES[shapeSelect.value];
+    const shapeName = (shape ? shape.label : shapeSelect.value)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    return `${timestamp}-${shapeName}.jpg`;
+  }
+
   function exportJPG(){
     if (!img || !bg){
       alert("Upload an image first.");
@@ -870,7 +889,7 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "pmag30-design.jpg";
+        a.download = buildExportFilename();
         document.body.appendChild(a);
         a.click();
         a.remove();
