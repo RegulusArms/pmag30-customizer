@@ -115,6 +115,104 @@
     border-top:1px solid var(--panel-border);
     margin:18px 0;
   }
+  .layers-list{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    max-height:260px;
+    overflow-y:auto;
+    padding-right:2px;
+  }
+  .layer-item{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:6px 8px;
+    border:1px solid var(--panel-border);
+    border-radius:8px;
+    background:#fff;
+    cursor:pointer;
+    user-select:none;
+    transition:border-color .12s ease, background .12s ease;
+  }
+  .layer-item.active{
+    border-color:var(--accent);
+    background:#eef4ff;
+  }
+  .layer-item.dragging{
+    opacity:.55;
+    box-shadow:0 4px 10px rgba(0,0,0,.18);
+    z-index:5;
+  }
+  .layer-item .drag-handle{
+    cursor:grab;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1;
+    padding:2px;
+    touch-action:none;
+    flex:0 0 auto;
+  }
+  .layer-item .drag-handle:active{cursor:grabbing;}
+  .layer-thumb{
+    width:32px;
+    height:32px;
+    object-fit:cover;
+    border-radius:4px;
+    border:1px solid var(--panel-border);
+    flex:0 0 auto;
+    background-image:
+      linear-gradient(45deg, #e6e6ea 25%, transparent 25%),
+      linear-gradient(-45deg, #e6e6ea 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #e6e6ea 75%),
+      linear-gradient(-45deg, transparent 75%, #e6e6ea 75%);
+    background-size:8px 8px;
+    background-position:0 0, 0 4px, 4px -4px, -4px 0px;
+  }
+  .layer-name{
+    flex:1 1 auto;
+    font-size:12.5px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .layer-remove{
+    flex:0 0 auto;
+    border:none;
+    background:transparent;
+    color:var(--muted);
+    font-size:16px;
+    line-height:1;
+    cursor:pointer;
+    padding:2px 4px;
+    border-radius:4px;
+  }
+  .layer-remove:hover{background:#fbe4e4;color:#c0392b;}
+  .layers-empty{
+    font-size:12.5px;
+    color:var(--muted);
+    padding:14px 8px;
+    text-align:center;
+    border:1px dashed var(--panel-border);
+    border-radius:8px;
+  }
+  .layer-item.drop-indicator::before{
+    content:"";
+    position:absolute;
+    left:0;right:0;top:-4px;
+    height:2px;
+    background:var(--accent);
+    border-radius:1px;
+  }
+  .layer-item.drop-indicator-after::after{
+    content:"";
+    position:absolute;
+    left:0;right:0;bottom:-4px;
+    height:2px;
+    background:var(--accent);
+    border-radius:1px;
+  }
   .stage-wrap{
     flex:1 1 auto;
     display:flex;
@@ -178,6 +276,19 @@
     text-align:center;
     max-width:420px;
   }
+  .download-note{
+    font-size:12px;
+    line-height:1.5;
+    color:var(--muted);
+    margin:12px 0 0;
+    padding:10px 12px;
+    background:#f7f8fa;
+    border:1px solid var(--panel-border);
+    border-radius:8px;
+  }
+  .download-note a{
+    color:var(--accent);
+  }
   @media (max-width:760px){
     .app{flex-direction:column;}
     .panel{width:auto;flex:none;border-right:none;border-bottom:1px solid var(--panel-border);}
@@ -189,16 +300,21 @@
 <div class="app">
   <aside class="panel">
     <h1>PMAG 30 Customizer</h1>
-    <p class="sub">Upload your image, then drag to move, use the corner handles to resize, and the top handle (or shift + scroll, or the [ ] keys) to rotate. The image only shows through the colored area of the shape.</p>
+    <p class="sub">Upload one or more images to add layers. Click a layer below to select it, then drag inside the outline to move it, use the corner handles to resize, and the top handle (or shift + scroll, or the [ ] keys) to rotate. Drag the ⋮⋮ handle in the layers list to change which layer sits on top.</p>
 
     <div class="field">
-      <label for="imageInput">Your image</label>
-      <input type="file" id="imageInput" accept="image/*">
+      <label for="imageInput">Add image layer(s)</label>
+      <input type="file" id="imageInput" accept="image/*" multiple>
+    </div>
+
+    <div class="field">
+      <label>Layers</label>
+      <div id="layersList" class="layers-list"></div>
     </div>
 
     <div class="btn-row" style="margin-bottom:18px;">
       <button class="btn" id="fitBtn" disabled>Fit to shape</button>
-      <button class="btn" id="removeImgBtn" disabled>Remove image</button>
+      <button class="btn" id="removeImgBtn" disabled>Remove layer</button>
     </div>
 
     <div class="field">
@@ -236,7 +352,10 @@
 
     <hr class="sep">
 
-    <button class="btn btn-primary" id="downloadBtn" disabled>Download JPG</button>
+    <button class="btn btn-primary" id="downloadBtn" disabled title="This is a mockup of the PMAG with your images positioned where you want them.">Download JPG</button>
+    <button class="btn" id="downloadFullBtn" disabled style="width:100%;margin-top:8px;" title="This is a full quality export of your images, layered how you want them.">Download Full Layers (PNG)</button>
+
+    <p class="download-note">Download both the JPG and PNG for each side of the PMAG (left and right), then email them to <a href="mailto:ross@regulusarms.com">ross@regulusarms.com</a> with your GunBroker order number as the subject line. You can send them as a zip file or as individual image attachments.</p>
   </aside>
 
   <main class="stage-wrap">
@@ -250,7 +369,7 @@
         <div class="handle rotate" id="handle-rotate" title="Rotate"></div>
       </div>
     </div>
-    <p class="hint">Drag inside the outline to move it, drag a corner to resize. Rotate by dragging the blue dot above it, holding shift while scrolling over the image, or pressing the [ and ] keys.</p>
+    <p class="hint">Click a layer in the list to select it, drag inside its outline to move it, drag a corner to resize. Rotate by dragging the blue dot above it, holding shift while scrolling over the image, or pressing the [ and ] keys. The image only shows through the colored area of the shape.</p>
   </main>
 </div>
 
@@ -296,17 +415,18 @@
   };
 
   // ---- state ----
-  let bg = null;         // { w, h, viewBox, bgClones, clipClones, clipBBoxRect }
-  let img = null;        // { naturalW, naturalH, dataURL }
-  let xform = { cx:0, cy:0, scale:1, rot:0 };
-  let fitScale = 1;
+  let bg = null;          // { w, h, viewBox, bgClones, clipClones, clipBBoxRect }
+  let layers = [];         // layers[0] = topmost (frontmost). each: {id, naturalW, naturalH, dataURL, name, xform:{cx,cy,scale,rot}, fitScale}
+  let activeLayerId = null;
   let showGuide = true;
+  let layerCounter = 0;
 
   // ---- dom refs ----
   const stage = document.getElementById("stage");
   const stageContainer = document.getElementById("stageContainer");
   const handleLayer = document.getElementById("handleLayer");
   const imageInput = document.getElementById("imageInput");
+  const layersList = document.getElementById("layersList");
   const shapeSelect = document.getElementById("shapeSelect");
   const fitBtn = document.getElementById("fitBtn");
   const removeImgBtn = document.getElementById("removeImgBtn");
@@ -318,6 +438,19 @@
   const rotRightBtn = document.getElementById("rotRightBtn");
   const guideCheckbox = document.getElementById("guideCheckbox");
   const downloadBtn = document.getElementById("downloadBtn");
+  const downloadFullBtn = document.getElementById("downloadFullBtn");
+
+  // ---- layer helpers ----
+  function getActiveLayer(){
+    return layers.find((l) => l.id === activeLayerId) || null;
+  }
+  function genLayerId(){
+    layerCounter += 1;
+    return "layer-" + layerCounter + "-" + Math.random().toString(36).slice(2, 7);
+  }
+  function transformString(xf){
+    return `translate(${xf.cx} ${xf.cy}) rotate(${xf.rot}) scale(${xf.scale})`;
+  }
 
   // ---- background parsing ----
   function parseAndLoadBackground(svgText){
@@ -431,26 +564,26 @@
       clipBBoxRect: { x:clipBBox.x, y:clipBBox.y, w:clipBBox.x2-clipBBox.x, h:clipBBox.y2-clipBBox.y }
     };
 
-    if (img){
-      computeFitScale();
+    if (layers.length){
+      layers.forEach((l) => { l.fitScale = computeFitScaleFor(l); });
       syncZoomSlider();
+      syncRotationSlider();
     }
     buildStage();
     updateHandles();
   }
 
   // ---- fit / transform helpers ----
-  function computeFitScale(){
+  function computeFitScaleFor(layer){
+    if (!bg) return 1;
     const cbb = bg.clipBBoxRect;
-    fitScale = Math.max(cbb.w/img.naturalW, cbb.h/img.naturalH) || 1;
+    return Math.max(cbb.w/layer.naturalW, cbb.h/layer.naturalH) || 1;
   }
 
-  function fitTransform(){
-    computeFitScale();
+  function fitLayerTransform(layer){
+    layer.fitScale = computeFitScaleFor(layer);
     const cbb = bg.clipBBoxRect;
-    xform = { cx: cbb.x + cbb.w/2, cy: cbb.y + cbb.h/2, scale: fitScale, rot: 0 };
-    syncZoomSlider();
-    syncRotationSlider();
+    layer.xform = { cx: cbb.x + cbb.w/2, cy: cbb.y + cbb.h/2, scale: layer.fitScale, rot: 0 };
   }
 
   // ---- building the visible stage ----
@@ -472,34 +605,40 @@
     bg.bgClones.forEach((c) => bgGroup.appendChild(c.cloneNode(true)));
     stage.appendChild(bgGroup);
 
-    const clipG = document.createElementNS(NS, "g");
-    clipG.setAttribute("clip-path", "url(#userClip)");
-    const moveG = document.createElementNS(NS, "g");
-    moveG.id = "movableGroup";
-    if (img){
+    // layers[0] is topmost; render bottom-to-top so later elements draw on top
+    for (let i = layers.length - 1; i >= 0; i--){
+      const layer = layers[i];
+      const clipG = document.createElementNS(NS, "g");
+      clipG.setAttribute("clip-path", "url(#userClip)");
+      const moveG = document.createElementNS(NS, "g");
+      moveG.setAttribute("data-layer-id", layer.id);
       const imageEl = document.createElementNS(NS, "image");
-      imageEl.id = "userImageEl";
-      imageEl.setAttributeNS(XLINK, "href", img.dataURL);
-      imageEl.setAttribute("href", img.dataURL);
-      imageEl.setAttribute("x", -img.naturalW/2);
-      imageEl.setAttribute("y", -img.naturalH/2);
-      imageEl.setAttribute("width", img.naturalW);
-      imageEl.setAttribute("height", img.naturalH);
+      imageEl.setAttributeNS(XLINK, "href", layer.dataURL);
+      imageEl.setAttribute("href", layer.dataURL);
+      imageEl.setAttribute("x", -layer.naturalW/2);
+      imageEl.setAttribute("y", -layer.naturalH/2);
+      imageEl.setAttribute("width", layer.naturalW);
+      imageEl.setAttribute("height", layer.naturalH);
       imageEl.setAttribute("preserveAspectRatio", "none");
+      imageEl.style.cursor = "pointer";
+      imageEl.addEventListener("pointerdown", () => {
+        if (layer.id !== activeLayerId) selectLayer(layer.id);
+      });
       moveG.appendChild(imageEl);
+      clipG.appendChild(moveG);
+      stage.appendChild(clipG);
     }
-    clipG.appendChild(moveG);
-    stage.appendChild(clipG);
 
-    if (img){
+    const activeLayer = getActiveLayer();
+    if (activeLayer){
       const guideG = document.createElementNS(NS, "g");
       guideG.id = "guideGroup";
       const guideRect = document.createElementNS(NS, "rect");
       guideRect.id = "guideRect";
-      guideRect.setAttribute("x", -img.naturalW/2);
-      guideRect.setAttribute("y", -img.naturalH/2);
-      guideRect.setAttribute("width", img.naturalW);
-      guideRect.setAttribute("height", img.naturalH);
+      guideRect.setAttribute("x", -activeLayer.naturalW/2);
+      guideRect.setAttribute("y", -activeLayer.naturalH/2);
+      guideRect.setAttribute("width", activeLayer.naturalW);
+      guideRect.setAttribute("height", activeLayer.naturalH);
       guideRect.setAttribute("fill", "#ffffff");
       guideRect.setAttribute("fill-opacity", "0.001");
       guideRect.setAttribute("stroke", "#3b82f6");
@@ -513,16 +652,18 @@
       stage.appendChild(guideG);
     }
 
-    updateImageTransform();
+    renderAllTransforms();
     attachStageInteractions();
   }
 
-  function updateImageTransform(){
-    const t = `translate(${xform.cx} ${xform.cy}) rotate(${xform.rot}) scale(${xform.scale})`;
-    const mg = document.getElementById("movableGroup");
+  function renderAllTransforms(){
+    layers.forEach((l) => {
+      const g = stage.querySelector('[data-layer-id="' + l.id + '"]');
+      if (g) g.setAttribute("transform", transformString(l.xform));
+    });
+    const activeLayer = getActiveLayer();
     const gg = document.getElementById("guideGroup");
-    if (mg) mg.setAttribute("transform", t);
-    if (gg) gg.setAttribute("transform", t);
+    if (gg && activeLayer) gg.setAttribute("transform", transformString(activeLayer.xform));
     updateHandles();
   }
 
@@ -538,13 +679,13 @@
     return { x:p.x, y:p.y };
   }
 
-  function localToStage(lx, ly){
-    const rad = xform.rot * Math.PI/180;
-    const sx = lx * xform.scale;
-    const sy = ly * xform.scale;
+  function localToStage(lx, ly, xf){
+    const rad = xf.rot * Math.PI/180;
+    const sx = lx * xf.scale;
+    const sy = ly * xf.scale;
     const rx = sx*Math.cos(rad) - sy*Math.sin(rad);
     const ry = sx*Math.sin(rad) + sy*Math.cos(rad);
-    return { x: xform.cx + rx, y: xform.cy + ry };
+    return { x: xf.cx + rx, y: xf.cy + ry };
   }
 
   function stagePointToContainerPx(x, y){
@@ -559,20 +700,22 @@
 
   // ---- handles ----
   function updateHandles(){
-    if (!img){
+    const activeLayer = getActiveLayer();
+    if (!activeLayer){
       handleLayer.style.display = "none";
       return;
     }
     handleLayer.style.display = "block";
-    const hw = img.naturalW/2, hh = img.naturalH/2;
+    const xf = activeLayer.xform;
+    const hw = activeLayer.naturalW/2, hh = activeLayer.naturalH/2;
     const corners = {
-      tl: localToStage(-hw, -hh),
-      tr: localToStage(hw, -hh),
-      br: localToStage(hw, hh),
-      bl: localToStage(-hw, hh)
+      tl: localToStage(-hw, -hh, xf),
+      tr: localToStage(hw, -hh, xf),
+      br: localToStage(hw, hh, xf),
+      bl: localToStage(-hw, hh, xf)
     };
-    const rotLocalY = -hh - Math.max(img.naturalW, img.naturalH) * 0.14 - 10;
-    const rotStage = localToStage(0, rotLocalY);
+    const rotLocalY = -hh - Math.max(activeLayer.naturalW, activeLayer.naturalH) * 0.14 - 10;
+    const rotStage = localToStage(0, rotLocalY, xf);
 
     placeHandle("handle-tl", corners.tl);
     placeHandle("handle-tr", corners.tr);
@@ -594,15 +737,17 @@
     const guideRect = document.getElementById("guideRect");
     if (!guideRect) return;
     guideRect.addEventListener("pointerdown", (e) => {
+      const layer = getActiveLayer();
+      if (!layer) return;
       e.preventDefault();
       guideRect.style.cursor = "grabbing";
       const start = stagePointFromEvent(e);
-      const startCx = xform.cx, startCy = xform.cy;
+      const startCx = layer.xform.cx, startCy = layer.xform.cy;
       function move(ev){
         const cur = stagePointFromEvent(ev);
-        xform.cx = startCx + (cur.x - start.x);
-        xform.cy = startCy + (cur.y - start.y);
-        updateImageTransform();
+        layer.xform.cx = startCx + (cur.x - start.x);
+        layer.xform.cy = startCy + (cur.y - start.y);
+        renderAllTransforms();
       }
       function up(){
         guideRect.style.cursor = "grab";
@@ -618,20 +763,21 @@
   function attachCornerHandle(id){
     const el = document.getElementById(id);
     el.addEventListener("pointerdown", (e) => {
-      if (!img) return;
+      const layer = getActiveLayer();
+      if (!layer) return;
       e.preventDefault();
       e.stopPropagation();
       const start = stagePointFromEvent(e);
-      const dx0 = start.x - xform.cx, dy0 = start.y - xform.cy;
+      const dx0 = start.x - layer.xform.cx, dy0 = start.y - layer.xform.cy;
       const startDist = Math.hypot(dx0, dy0) || 0.0001;
-      const startScale = xform.scale;
+      const startScale = layer.xform.scale;
       function move(ev){
         const cur = stagePointFromEvent(ev);
-        const dist = Math.hypot(cur.x - xform.cx, cur.y - xform.cy);
+        const dist = Math.hypot(cur.x - layer.xform.cx, cur.y - layer.xform.cy);
         let newScale = startScale * (dist / startDist);
         newScale = Math.max(0.02, Math.min(newScale, 60));
-        xform.scale = newScale;
-        updateImageTransform();
+        layer.xform.scale = newScale;
+        renderAllTransforms();
         syncZoomSlider();
       }
       function up(){
@@ -648,17 +794,18 @@
   (function attachRotateHandle(){
     const el = document.getElementById("handle-rotate");
     el.addEventListener("pointerdown", (e) => {
-      if (!img) return;
+      const layer = getActiveLayer();
+      if (!layer) return;
       e.preventDefault();
       e.stopPropagation();
       const start = stagePointFromEvent(e);
-      const startAngle = Math.atan2(start.y - xform.cy, start.x - xform.cx) * 180/Math.PI;
-      const startRot = xform.rot;
+      const startAngle = Math.atan2(start.y - layer.xform.cy, start.x - layer.xform.cx) * 180/Math.PI;
+      const startRot = layer.xform.rot;
       function move(ev){
         const cur = stagePointFromEvent(ev);
-        const curAngle = Math.atan2(cur.y - xform.cy, cur.x - xform.cx) * 180/Math.PI;
-        xform.rot = startRot + (curAngle - startAngle);
-        updateImageTransform();
+        const curAngle = Math.atan2(cur.y - layer.xform.cy, cur.x - layer.xform.cx) * 180/Math.PI;
+        layer.xform.rot = startRot + (curAngle - startAngle);
+        renderAllTransforms();
         syncRotationSlider();
       }
       function up(){
@@ -670,18 +817,177 @@
     });
   })();
 
+  // ---- layers list (select + drag to reorder) ----
+  function renderLayersList(){
+    layersList.innerHTML = "";
+    if (!layers.length){
+      const empty = document.createElement("div");
+      empty.className = "layers-empty";
+      empty.textContent = "No image layers yet — add one above.";
+      layersList.appendChild(empty);
+      return;
+    }
+    layers.forEach((layer) => {
+      const item = document.createElement("div");
+      item.className = "layer-item" + (layer.id === activeLayerId ? " active" : "");
+      item.dataset.id = layer.id;
+
+      const handle = document.createElement("span");
+      handle.className = "drag-handle";
+      handle.textContent = "⋮⋮";
+      handle.title = "Drag to reorder";
+
+      const thumb = document.createElement("img");
+      thumb.className = "layer-thumb";
+      thumb.src = layer.dataURL;
+      thumb.alt = "";
+
+      const name = document.createElement("span");
+      name.className = "layer-name";
+      name.textContent = layer.name;
+      name.title = layer.name;
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "layer-remove";
+      removeBtn.title = "Remove layer";
+      removeBtn.textContent = "×";
+      removeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        removeLayer(layer.id);
+      });
+
+      item.appendChild(handle);
+      item.appendChild(thumb);
+      item.appendChild(name);
+      item.appendChild(removeBtn);
+
+      item.addEventListener("click", () => selectLayer(layer.id));
+      attachLayerDrag(item, handle, layer.id);
+
+      layersList.appendChild(item);
+    });
+  }
+
+  function attachLayerDrag(itemEl, handleEl, id){
+    handleEl.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const others = Array.from(layersList.querySelectorAll(".layer-item"))
+        .filter((it) => it.dataset.id !== id)
+        .map((it) => ({ id: it.dataset.id, el: it, rect: it.getBoundingClientRect() }));
+      const startY = e.clientY;
+      let lastClientY = startY;
+      itemEl.classList.add("dragging");
+      try{ handleEl.setPointerCapture(e.pointerId); }catch(err){ /* ignore */ }
+
+      function clearIndicators(){
+        others.forEach((o) => o.el.classList.remove("drop-indicator", "drop-indicator-after"));
+      }
+      function computeInsertBeforeId(clientY){
+        for (const o of others){
+          const mid = o.rect.top + o.rect.height/2;
+          if (clientY < mid) return o.id;
+        }
+        return null;
+      }
+      function move(ev){
+        lastClientY = ev.clientY;
+        itemEl.style.transform = `translateY(${ev.clientY - startY}px)`;
+        clearIndicators();
+        const beforeId = computeInsertBeforeId(ev.clientY);
+        if (beforeId){
+          const t = others.find((o) => o.id === beforeId);
+          if (t) t.el.classList.add("drop-indicator");
+        } else if (others.length){
+          others[others.length - 1].el.classList.add("drop-indicator-after");
+        }
+      }
+      function up(ev){
+        try{ handleEl.releasePointerCapture(ev.pointerId); }catch(err){ /* ignore */ }
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+        itemEl.classList.remove("dragging");
+        itemEl.style.transform = "";
+        clearIndicators();
+
+        const beforeId = computeInsertBeforeId(lastClientY);
+        const curIdx = layers.findIndex((l) => l.id === id);
+        if (curIdx === -1) return;
+        const [moved] = layers.splice(curIdx, 1);
+        if (beforeId){
+          const insertIdx = layers.findIndex((l) => l.id === beforeId);
+          layers.splice(insertIdx === -1 ? layers.length : insertIdx, 0, moved);
+        } else {
+          layers.push(moved);
+        }
+        renderLayersList();
+        buildStage();
+      }
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+    });
+  }
+
+  function selectLayer(id){
+    if (activeLayerId === id) return;
+    activeLayerId = id;
+    buildStage();
+    renderLayersList();
+    syncZoomSlider();
+    syncRotationSlider();
+  }
+
+  function addLayer(spec){
+    const layer = {
+      id: genLayerId(),
+      naturalW: spec.naturalW,
+      naturalH: spec.naturalH,
+      dataURL: spec.dataURL,
+      name: spec.name,
+      xform: { cx:0, cy:0, scale:1, rot:0 },
+      fitScale: 1
+    };
+    if (bg) fitLayerTransform(layer);
+    layers.unshift(layer);
+    activeLayerId = layer.id;
+    buildStage();
+    renderLayersList();
+    syncZoomSlider();
+    syncRotationSlider();
+    setControlsEnabled(true);
+  }
+
+  function removeLayer(id){
+    const idx = layers.findIndex((l) => l.id === id);
+    if (idx === -1) return;
+    layers.splice(idx, 1);
+    if (activeLayerId === id){
+      activeLayerId = layers.length ? layers[Math.min(idx, layers.length - 1)].id : null;
+    }
+    buildStage();
+    renderLayersList();
+    syncZoomSlider();
+    syncRotationSlider();
+    setControlsEnabled(layers.length > 0);
+  }
+
   // ---- slider / control sync ----
   function syncZoomSlider(){
-    const pct = Math.round((xform.scale / fitScale) * 100);
+    const layer = getActiveLayer();
+    if (!layer){ zoomRange.value = 100; zoomLabel.textContent = "100%"; return; }
+    const pct = Math.round((layer.xform.scale / layer.fitScale) * 100);
     const clamped = Math.min(500, Math.max(20, pct));
     zoomRange.value = clamped;
     zoomLabel.textContent = pct + "%";
   }
   function syncRotationSlider(){
-    let r = ((xform.rot % 360) + 360) % 360;
+    const layer = getActiveLayer();
+    if (!layer){ rotRange.value = 0; rotLabel.textContent = "0°"; return; }
+    let r = ((layer.xform.rot % 360) + 360) % 360;
     if (r > 180) r -= 360;
     rotRange.value = Math.round(r);
-    rotLabel.textContent = Math.round(xform.rot % 360) + "°";
+    rotLabel.textContent = Math.round(layer.xform.rot % 360) + "°";
   }
 
   function setControlsEnabled(enabled){
@@ -692,29 +998,41 @@
     rotLeftBtn.disabled = !enabled;
     rotRightBtn.disabled = !enabled;
     downloadBtn.disabled = !enabled;
+    downloadFullBtn.disabled = !enabled;
   }
 
-  // ---- events: image upload ----
+  // ---- events: image upload (each file becomes a new layer) ----
   imageInput.addEventListener("change", (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const dataURL = ev.target.result;
-      const tmp = new Image();
-      tmp.onload = () => {
-        img = { naturalW: tmp.naturalWidth || 300, naturalH: tmp.naturalHeight || 300, dataURL };
-        if (bg) fitTransform();
-        buildStage();
-        updateHandles();
-        setControlsEnabled(true);
-      };
-      tmp.onerror = () => alert("Couldn't read that image file.");
-      tmp.src = dataURL;
-    };
-    reader.onerror = () => alert("Couldn't read that image file.");
-    reader.readAsDataURL(file);
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    loadFilesSequentially(files).then(() => { imageInput.value = ""; });
   });
+
+  function loadFilesSequentially(files){
+    return files.reduce((p, file) => p.then(() => loadOneFile(file)), Promise.resolve());
+  }
+  function loadOneFile(file){
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataURL = ev.target.result;
+        const tmp = new Image();
+        tmp.onload = () => {
+          addLayer({
+            naturalW: tmp.naturalWidth || 300,
+            naturalH: tmp.naturalHeight || 300,
+            dataURL,
+            name: file.name || ("Layer " + (layers.length + 1))
+          });
+          resolve();
+        };
+        tmp.onerror = () => { alert("Couldn't read " + (file.name || "an image") + "."); resolve(); };
+        tmp.src = dataURL;
+      };
+      reader.onerror = () => { alert("Couldn't read " + (file.name || "an image") + "."); resolve(); };
+      reader.readAsDataURL(file);
+    });
+  }
 
   // ---- events: shape select (built-in shapes) ----
   shapeSelect.addEventListener("change", () => {
@@ -725,42 +1043,47 @@
 
   // ---- events: controls ----
   fitBtn.addEventListener("click", () => {
-    if (!img || !bg) return;
-    fitTransform();
-    updateImageTransform();
+    const layer = getActiveLayer();
+    if (!layer || !bg) return;
+    fitLayerTransform(layer);
+    renderAllTransforms();
+    syncZoomSlider();
+    syncRotationSlider();
   });
 
   removeImgBtn.addEventListener("click", () => {
-    img = null;
-    buildStage();
-    updateHandles();
-    setControlsEnabled(false);
+    if (!activeLayerId) return;
+    removeLayer(activeLayerId);
   });
 
   zoomRange.addEventListener("input", () => {
-    if (!img) return;
-    xform.scale = fitScale * (parseFloat(zoomRange.value) / 100);
+    const layer = getActiveLayer();
+    if (!layer) return;
+    layer.xform.scale = layer.fitScale * (parseFloat(zoomRange.value) / 100);
     zoomLabel.textContent = zoomRange.value + "%";
-    updateImageTransform();
+    renderAllTransforms();
   });
 
   rotRange.addEventListener("input", () => {
-    if (!img) return;
-    xform.rot = parseFloat(rotRange.value);
-    rotLabel.textContent = Math.round(xform.rot) + "°";
-    updateImageTransform();
+    const layer = getActiveLayer();
+    if (!layer) return;
+    layer.xform.rot = parseFloat(rotRange.value);
+    rotLabel.textContent = Math.round(layer.xform.rot) + "°";
+    renderAllTransforms();
   });
 
   rotLeftBtn.addEventListener("click", () => {
-    if (!img) return;
-    xform.rot -= 15;
-    updateImageTransform();
+    const layer = getActiveLayer();
+    if (!layer) return;
+    layer.xform.rot -= 15;
+    renderAllTransforms();
     syncRotationSlider();
   });
   rotRightBtn.addEventListener("click", () => {
-    if (!img) return;
-    xform.rot += 15;
-    updateImageTransform();
+    const layer = getActiveLayer();
+    if (!layer) return;
+    layer.xform.rot += 15;
+    renderAllTransforms();
     syncRotationSlider();
   });
 
@@ -772,28 +1095,30 @@
 
   // ---- rotate without the slider: shift + scroll wheel over the stage ----
   stageContainer.addEventListener("wheel", (e) => {
-    if (!img) return;
+    const layer = getActiveLayer();
+    if (!layer) return;
     if (!e.shiftKey){
       // plain scroll still zooms, so scrolling the page doesn't get "stuck"
       return;
     }
     e.preventDefault();
     const step = e.deltaY > 0 ? 5 : -5;
-    xform.rot += step;
-    updateImageTransform();
+    layer.xform.rot += step;
+    renderAllTransforms();
     syncRotationSlider();
   }, { passive:false });
 
   // ---- rotate without the slider: [ and ] keys ----
   window.addEventListener("keydown", (e) => {
-    if (!img) return;
+    const layer = getActiveLayer();
+    if (!layer) return;
     const tag = (document.activeElement && document.activeElement.tagName) || "";
     if (["INPUT","SELECT","TEXTAREA"].includes(tag)) return; // don't hijack typing/sliders
     if (e.key !== "[" && e.key !== "]") return;
     e.preventDefault();
     const step = e.shiftKey ? 15 : 1;
-    xform.rot += (e.key === "]" ? step : -step);
-    updateImageTransform();
+    layer.xform.rot += (e.key === "]" ? step : -step);
+    renderAllTransforms();
     syncRotationSlider();
   });
 
@@ -801,7 +1126,7 @@
   window.addEventListener("scroll", updateHandles, true);
 
   // ---- export ----
-  function buildExportFilename(){
+  function buildExportFilename(ext, suffix){
     const now = new Date();
     const pad = (n) => String(n).padStart(2, "0");
     const timestamp = now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate())
@@ -811,12 +1136,33 @@
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "");
-    return `${timestamp}-${shapeName}.jpg`;
+    const parts = [timestamp, shapeName];
+    if (suffix) parts.push(suffix);
+    return parts.join("-") + "." + ext;
+  }
+
+  // bounding box (in stage coordinates) that contains every layer at its current transform
+  function computeLayersBBox(){
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    layers.forEach((l) => {
+      const hw = l.naturalW/2, hh = l.naturalH/2;
+      [
+        localToStage(-hw, -hh, l.xform),
+        localToStage(hw, -hh, l.xform),
+        localToStage(hw, hh, l.xform),
+        localToStage(-hw, hh, l.xform)
+      ].forEach((c) => {
+        minX = Math.min(minX, c.x); maxX = Math.max(maxX, c.x);
+        minY = Math.min(minY, c.y); maxY = Math.max(maxY, c.y);
+      });
+    });
+    if (!isFinite(minX)) return null;
+    return { x:minX, y:minY, w:maxX-minX, h:maxY-minY };
   }
 
   function exportJPG(){
-    if (!img || !bg){
-      alert("Upload an image first.");
+    if (!layers.length || !bg){
+      alert("Add at least one image layer first.");
       return;
     }
     downloadBtn.disabled = true;
@@ -840,21 +1186,24 @@
     bg.bgClones.forEach((c) => bgGroup.appendChild(c.cloneNode(true)));
     outSvg.appendChild(bgGroup);
 
-    const clipG = document.createElementNS(NS, "g");
-    clipG.setAttribute("clip-path", "url(#exportClip)");
-    const moveG = document.createElementNS(NS, "g");
-    moveG.setAttribute("transform", `translate(${xform.cx} ${xform.cy}) rotate(${xform.rot}) scale(${xform.scale})`);
-    const imageEl = document.createElementNS(NS, "image");
-    imageEl.setAttributeNS(XLINK, "href", img.dataURL);
-    imageEl.setAttribute("href", img.dataURL);
-    imageEl.setAttribute("x", -img.naturalW/2);
-    imageEl.setAttribute("y", -img.naturalH/2);
-    imageEl.setAttribute("width", img.naturalW);
-    imageEl.setAttribute("height", img.naturalH);
-    imageEl.setAttribute("preserveAspectRatio", "none");
-    moveG.appendChild(imageEl);
-    clipG.appendChild(moveG);
-    outSvg.appendChild(clipG);
+    for (let i = layers.length - 1; i >= 0; i--){
+      const layer = layers[i];
+      const clipG = document.createElementNS(NS, "g");
+      clipG.setAttribute("clip-path", "url(#exportClip)");
+      const moveG = document.createElementNS(NS, "g");
+      moveG.setAttribute("transform", transformString(layer.xform));
+      const imageEl = document.createElementNS(NS, "image");
+      imageEl.setAttributeNS(XLINK, "href", layer.dataURL);
+      imageEl.setAttribute("href", layer.dataURL);
+      imageEl.setAttribute("x", -layer.naturalW/2);
+      imageEl.setAttribute("y", -layer.naturalH/2);
+      imageEl.setAttribute("width", layer.naturalW);
+      imageEl.setAttribute("height", layer.naturalH);
+      imageEl.setAttribute("preserveAspectRatio", "none");
+      moveG.appendChild(imageEl);
+      clipG.appendChild(moveG);
+      outSvg.appendChild(clipG);
+    }
 
     const svgString = new XMLSerializer().serializeToString(outSvg);
     let svg64;
@@ -889,7 +1238,7 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = buildExportFilename();
+        a.download = buildExportFilename("jpg");
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -905,15 +1254,107 @@
   }
 
   function resetDownloadBtn(){
-    downloadBtn.disabled = !img;
+    downloadBtn.disabled = !layers.length;
     downloadBtn.textContent = "Download JPG";
   }
 
   downloadBtn.addEventListener("click", exportJPG);
 
+  // full-resolution export: every layer at its real transformed size, no shape clip,
+  // no shape fill — canvas is just the bounding box of the layers, transparent PNG.
+  function exportFullPNG(){
+    if (!layers.length){
+      alert("Add at least one image layer first.");
+      return;
+    }
+    const bbox = computeLayersBBox();
+    if (!bbox || bbox.w <= 0 || bbox.h <= 0){
+      alert("Nothing to export.");
+      return;
+    }
+    downloadFullBtn.disabled = true;
+    downloadFullBtn.textContent = "Preparing…";
+
+    const outSvg = document.createElementNS(NS, "svg");
+    outSvg.setAttribute("xmlns", NS);
+    outSvg.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", XLINK);
+    outSvg.setAttribute("viewBox", `${bbox.x} ${bbox.y} ${bbox.w} ${bbox.h}`);
+    outSvg.setAttribute("width", bbox.w);
+    outSvg.setAttribute("height", bbox.h);
+
+    for (let i = layers.length - 1; i >= 0; i--){
+      const layer = layers[i];
+      const moveG = document.createElementNS(NS, "g");
+      moveG.setAttribute("transform", transformString(layer.xform));
+      const imageEl = document.createElementNS(NS, "image");
+      imageEl.setAttributeNS(XLINK, "href", layer.dataURL);
+      imageEl.setAttribute("href", layer.dataURL);
+      imageEl.setAttribute("x", -layer.naturalW/2);
+      imageEl.setAttribute("y", -layer.naturalH/2);
+      imageEl.setAttribute("width", layer.naturalW);
+      imageEl.setAttribute("height", layer.naturalH);
+      imageEl.setAttribute("preserveAspectRatio", "none");
+      moveG.appendChild(imageEl);
+      outSvg.appendChild(moveG);
+    }
+
+    const svgString = new XMLSerializer().serializeToString(outSvg);
+    let svg64;
+    try{
+      svg64 = btoa(unescape(encodeURIComponent(svgString)));
+    }catch(e){
+      alert("Export failed while encoding the image.");
+      resetDownloadFullBtn();
+      return;
+    }
+    const dataUrl = "data:image/svg+xml;base64," + svg64;
+
+    const longSide = Math.max(bbox.w, bbox.h);
+    const exportScale = Math.max(1, Math.min(8, Math.round(2400 / longSide)));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bbox.w * exportScale));
+    canvas.height = Math.max(1, Math.round(bbox.h * exportScale));
+    const ctx = canvas.getContext("2d");
+
+    const im = new Image();
+    im.onload = () => {
+      // no backdrop fill — PNG keeps transparency where layers don't cover the canvas
+      ctx.drawImage(im, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => {
+        if (!blob){
+          alert("Export failed while creating the PNG.");
+          resetDownloadFullBtn();
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = buildExportFilename("png", "full-layers");
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 3000);
+        resetDownloadFullBtn();
+      }, "image/png");
+    };
+    im.onerror = () => {
+      alert("Export failed while rendering the image. Try different photos.");
+      resetDownloadFullBtn();
+    };
+    im.src = dataUrl;
+  }
+
+  function resetDownloadFullBtn(){
+    downloadFullBtn.disabled = !layers.length;
+    downloadFullBtn.textContent = "Download Full Layers (PNG)";
+  }
+
+  downloadFullBtn.addEventListener("click", exportFullPNG);
+
   // ---- init ----
   shapeSelect.value = "left";
   parseAndLoadBackground(BUILTIN_SHAPES.left.svg);
+  renderLayersList();
   setControlsEnabled(false);
 })();
 </script>
