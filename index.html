@@ -352,10 +352,9 @@
 
     <hr class="sep">
 
-    <button class="btn btn-primary" id="downloadBtn" disabled title="This is a mockup of the PMAG with your images positioned where you want them.">Download JPG</button>
-    <button class="btn" id="downloadFullBtn" disabled style="width:100%;margin-top:8px;" title="This is a full quality export of your images, layered how you want them.">Download Full Layers (PNG)</button>
+    <button class="btn btn-primary" id="downloadZipBtn" disabled title="Download a zip with the mockup JPG, the full-quality layered PNG, and your original uploaded images.">Download ZIP</button>
 
-    <p class="download-note">Download both the JPG and PNG for each side of the PMAG (left and right), then email them to <a href="mailto:ross@regulusarms.com">ross@regulusarms.com</a> with your GunBroker order number as the subject line. You can send them as a zip file or as individual image attachments.</p>
+    <p class="download-note">Download the zip for each side of the PMAG (left and right) — it contains the mockup JPG, the full-quality PNG, and your original uploaded images — then email them to <a href="mailto:ross@regulusarms.com">ross@regulusarms.com</a> with your GunBroker order number as the subject line.</p>
   </aside>
 
   <main class="stage-wrap">
@@ -437,8 +436,7 @@
   const rotLeftBtn = document.getElementById("rotLeftBtn");
   const rotRightBtn = document.getElementById("rotRightBtn");
   const guideCheckbox = document.getElementById("guideCheckbox");
-  const downloadBtn = document.getElementById("downloadBtn");
-  const downloadFullBtn = document.getElementById("downloadFullBtn");
+  const downloadZipBtn = document.getElementById("downloadZipBtn");
 
   // ---- layer helpers ----
   function getActiveLayer(){
@@ -997,8 +995,7 @@
     rotRange.disabled = !enabled;
     rotLeftBtn.disabled = !enabled;
     rotRightBtn.disabled = !enabled;
-    downloadBtn.disabled = !enabled;
-    downloadFullBtn.disabled = !enabled;
+    downloadZipBtn.disabled = !enabled;
   }
 
   // ---- events: image upload (each file becomes a new layer) ----
@@ -1160,14 +1157,41 @@
     return { x:minX, y:minY, w:maxX-minX, h:maxY-minY };
   }
 
-  function exportJPG(){
-    if (!layers.length || !bg){
-      alert("Add at least one image layer first.");
-      return;
-    }
-    downloadBtn.disabled = true;
-    downloadBtn.textContent = "Preparing…";
+  // renders an SVG string to a raster blob via an offscreen canvas
+  function svgStringToCanvasBlob(svgString, width, height, exportScale, mime, quality, fillWhite){
+    return new Promise((resolve, reject) => {
+      let svg64;
+      try{
+        svg64 = btoa(unescape(encodeURIComponent(svgString)));
+      }catch(e){
+        reject(new Error("Export failed while encoding the image."));
+        return;
+      }
+      const dataUrl = "data:image/svg+xml;base64," + svg64;
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(width * exportScale));
+      canvas.height = Math.max(1, Math.round(height * exportScale));
+      const ctx = canvas.getContext("2d");
+      const im = new Image();
+      im.onload = () => {
+        if (fillWhite){
+          // JPG has no transparency, so paint a white backdrop first
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        ctx.drawImage(im, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => {
+          if (!blob) reject(new Error("Export failed while creating the image."));
+          else resolve(blob);
+        }, mime, quality);
+      };
+      im.onerror = () => reject(new Error("Export failed while rendering the image."));
+      im.src = dataUrl;
+    });
+  }
 
+  // mockup: shape-clipped composite of every layer, at the shape's native size
+  function buildMockupSvgString(){
     const outSvg = document.createElementNS(NS, "svg");
     outSvg.setAttribute("xmlns", NS);
     outSvg.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", XLINK);
@@ -1205,75 +1229,14 @@
       outSvg.appendChild(clipG);
     }
 
-    const svgString = new XMLSerializer().serializeToString(outSvg);
-    let svg64;
-    try{
-      svg64 = btoa(unescape(encodeURIComponent(svgString)));
-    }catch(e){
-      alert("Export failed while encoding the image.");
-      resetDownloadBtn();
-      return;
-    }
-    const dataUrl = "data:image/svg+xml;base64," + svg64;
-
-    const longSide = Math.max(bg.w, bg.h);
-    const exportScale = Math.max(1, Math.min(8, Math.round(2400 / longSide)));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round(bg.w * exportScale));
-    canvas.height = Math.max(1, Math.round(bg.h * exportScale));
-    const ctx = canvas.getContext("2d");
-
-    const im = new Image();
-    im.onload = () => {
-      // JPG has no transparency, so paint a white backdrop first
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(im, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob((blob) => {
-        if (!blob){
-          alert("Export failed while creating the JPG.");
-          resetDownloadBtn();
-          return;
-        }
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = buildExportFilename("jpg");
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 3000);
-        resetDownloadBtn();
-      }, "image/jpeg", 0.75);
-    };
-    im.onerror = () => {
-      alert("Export failed while rendering the image. Try a different photo.");
-      resetDownloadBtn();
-    };
-    im.src = dataUrl;
+    return { svgString: new XMLSerializer().serializeToString(outSvg), w: bg.w, h: bg.h };
   }
 
-  function resetDownloadBtn(){
-    downloadBtn.disabled = !layers.length;
-    downloadBtn.textContent = "Download JPG";
-  }
-
-  downloadBtn.addEventListener("click", exportJPG);
-
-  // full-resolution export: every layer at its real transformed size, no shape clip,
+  // full-resolution: every layer at its real transformed size, no shape clip,
   // no shape fill — canvas is just the bounding box of the layers, transparent PNG.
-  function exportFullPNG(){
-    if (!layers.length){
-      alert("Add at least one image layer first.");
-      return;
-    }
+  function buildFullLayersSvgString(){
     const bbox = computeLayersBBox();
-    if (!bbox || bbox.w <= 0 || bbox.h <= 0){
-      alert("Nothing to export.");
-      return;
-    }
-    downloadFullBtn.disabled = true;
-    downloadFullBtn.textContent = "Preparing…";
+    if (!bbox || bbox.w <= 0 || bbox.h <= 0) return null;
 
     const outSvg = document.createElementNS(NS, "svg");
     outSvg.setAttribute("xmlns", NS);
@@ -1298,58 +1261,174 @@
       outSvg.appendChild(moveG);
     }
 
-    const svgString = new XMLSerializer().serializeToString(outSvg);
-    let svg64;
-    try{
-      svg64 = btoa(unescape(encodeURIComponent(svgString)));
-    }catch(e){
-      alert("Export failed while encoding the image.");
-      resetDownloadFullBtn();
+    return { svgString: new XMLSerializer().serializeToString(outSvg), bbox };
+  }
+
+  // ---- minimal zero-dependency ZIP writer (STORE method, no compression) ----
+  const CRC_TABLE = (function(){
+    const table = new Uint32Array(256);
+    for (let n = 0; n < 256; n++){
+      let c = n;
+      for (let k = 0; k < 8; k++){
+        c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      }
+      table[n] = c >>> 0;
+    }
+    return table;
+  })();
+  function crc32(bytes){
+    let crc = 0xFFFFFFFF;
+    for (let i = 0; i < bytes.length; i++){
+      crc = CRC_TABLE[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
+    }
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+  function dosDateTime(date){
+    const dosTime = ((date.getHours() & 0x1F) << 11) | ((date.getMinutes() & 0x3F) << 5) | (Math.floor(date.getSeconds()/2) & 0x1F);
+    const dosDate = (((date.getFullYear()-1980) & 0x7F) << 9) | (((date.getMonth()+1) & 0xF) << 5) | (date.getDate() & 0x1F);
+    return { dosTime, dosDate };
+  }
+  function createZipBlob(entries){
+    const { dosTime, dosDate } = dosDateTime(new Date());
+    const encoder = new TextEncoder();
+    const fileParts = [];
+    const centralParts = [];
+    let offset = 0;
+
+    entries.forEach((entry) => {
+      const nameBytes = encoder.encode(entry.name);
+      const data = entry.data;
+      const crc = crc32(data);
+      const size = data.length;
+
+      const localHeader = new DataView(new ArrayBuffer(30));
+      localHeader.setUint32(0, 0x04034b50, true);
+      localHeader.setUint16(4, 20, true);
+      localHeader.setUint16(6, 0, true);
+      localHeader.setUint16(8, 0, true);
+      localHeader.setUint16(10, dosTime, true);
+      localHeader.setUint16(12, dosDate, true);
+      localHeader.setUint32(14, crc, true);
+      localHeader.setUint32(18, size, true);
+      localHeader.setUint32(22, size, true);
+      localHeader.setUint16(26, nameBytes.length, true);
+      localHeader.setUint16(28, 0, true);
+      fileParts.push(new Uint8Array(localHeader.buffer), nameBytes, data);
+
+      const centralHeader = new DataView(new ArrayBuffer(46));
+      centralHeader.setUint32(0, 0x02014b50, true);
+      centralHeader.setUint16(4, 20, true);
+      centralHeader.setUint16(6, 20, true);
+      centralHeader.setUint16(8, 0, true);
+      centralHeader.setUint16(10, 0, true);
+      centralHeader.setUint16(12, dosTime, true);
+      centralHeader.setUint16(14, dosDate, true);
+      centralHeader.setUint32(16, crc, true);
+      centralHeader.setUint32(20, size, true);
+      centralHeader.setUint32(24, size, true);
+      centralHeader.setUint16(28, nameBytes.length, true);
+      centralHeader.setUint16(30, 0, true);
+      centralHeader.setUint16(32, 0, true);
+      centralHeader.setUint16(34, 0, true);
+      centralHeader.setUint16(36, 0, true);
+      centralHeader.setUint32(38, 0, true);
+      centralHeader.setUint32(42, offset, true);
+      centralParts.push(new Uint8Array(centralHeader.buffer), nameBytes);
+
+      offset += localHeader.byteLength + nameBytes.length + size;
+    });
+
+    const centralStart = offset;
+    const centralSize = centralParts.reduce((sum, p) => sum + p.length, 0);
+
+    const eocd = new DataView(new ArrayBuffer(22));
+    eocd.setUint32(0, 0x06054b50, true);
+    eocd.setUint16(4, 0, true);
+    eocd.setUint16(6, 0, true);
+    eocd.setUint16(8, entries.length, true);
+    eocd.setUint16(10, entries.length, true);
+    eocd.setUint32(12, centralSize, true);
+    eocd.setUint32(16, centralStart, true);
+    eocd.setUint16(20, 0, true);
+
+    return new Blob([...fileParts, ...centralParts, new Uint8Array(eocd.buffer)], { type: "application/zip" });
+  }
+
+  function dataURLToUint8Array(dataURL){
+    const base64 = dataURL.slice(dataURL.indexOf(",") + 1);
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  }
+  function sanitizeFilename(name){
+    return String(name).replace(/[\/\\:*?"<>|]+/g, "_").trim() || "image";
+  }
+  function ensureUniqueName(name, usedNames){
+    if (!usedNames.has(name)) return name;
+    const dot = name.lastIndexOf(".");
+    const base = dot === -1 ? name : name.slice(0, dot);
+    const ext = dot === -1 ? "" : name.slice(dot);
+    let i = 2;
+    let candidate = `${base}-${i}${ext}`;
+    while (usedNames.has(candidate)){ i += 1; candidate = `${base}-${i}${ext}`; }
+    return candidate;
+  }
+
+  // ---- combined export: mockup JPG + full-layers PNG + original uploads, zipped together ----
+  async function exportZip(){
+    if (!layers.length || !bg){
+      alert("Add at least one image layer first.");
       return;
     }
-    const dataUrl = "data:image/svg+xml;base64," + svg64;
+    downloadZipBtn.disabled = true;
+    downloadZipBtn.textContent = "Preparing…";
 
-    const longSide = Math.max(bbox.w, bbox.h);
-    const exportScale = Math.max(1, Math.min(8, Math.round(2400 / longSide)));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round(bbox.w * exportScale));
-    canvas.height = Math.max(1, Math.round(bbox.h * exportScale));
-    const ctx = canvas.getContext("2d");
+    try{
+      const entries = [];
 
-    const im = new Image();
-    im.onload = () => {
-      // no backdrop fill — PNG keeps transparency where layers don't cover the canvas
-      ctx.drawImage(im, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob((blob) => {
-        if (!blob){
-          alert("Export failed while creating the PNG.");
-          resetDownloadFullBtn();
-          return;
-        }
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = buildExportFilename("png", "full-layers");
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 3000);
-        resetDownloadFullBtn();
-      }, "image/png");
-    };
-    im.onerror = () => {
-      alert("Export failed while rendering the image. Try different photos.");
-      resetDownloadFullBtn();
-    };
-    im.src = dataUrl;
+      const mockup = buildMockupSvgString();
+      const mockupScale = Math.max(1, Math.min(8, Math.round(2400 / Math.max(mockup.w, mockup.h))));
+      const jpgBlob = await svgStringToCanvasBlob(mockup.svgString, mockup.w, mockup.h, mockupScale, "image/jpeg", 0.75, true);
+      entries.push({ name: buildExportFilename("jpg"), data: new Uint8Array(await jpgBlob.arrayBuffer()) });
+
+      const full = buildFullLayersSvgString();
+      if (full){
+        const fullScale = Math.max(1, Math.min(8, Math.round(2400 / Math.max(full.bbox.w, full.bbox.h))));
+        const pngBlob = await svgStringToCanvasBlob(full.svgString, full.bbox.w, full.bbox.h, fullScale, "image/png", undefined, false);
+        entries.push({ name: buildExportFilename("png", "full-layers"), data: new Uint8Array(await pngBlob.arrayBuffer()) });
+      }
+
+      const usedNames = new Set(entries.map((e) => e.name));
+      layers.slice().reverse().forEach((layer, idx) => {
+        const data = dataURLToUint8Array(layer.dataURL);
+        const name = ensureUniqueName("originals/" + sanitizeFilename(layer.name || ("layer-" + (idx+1))), usedNames);
+        usedNames.add(name);
+        entries.push({ name, data });
+      });
+
+      const zipBlob = createZipBlob(entries);
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = buildExportFilename("zip");
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 3000);
+    }catch(e){
+      alert((e && e.message) || "Export failed.");
+    }finally{
+      resetDownloadZipBtn();
+    }
   }
 
-  function resetDownloadFullBtn(){
-    downloadFullBtn.disabled = !layers.length;
-    downloadFullBtn.textContent = "Download Full Layers (PNG)";
+  function resetDownloadZipBtn(){
+    downloadZipBtn.disabled = !layers.length;
+    downloadZipBtn.textContent = "Download ZIP";
   }
 
-  downloadFullBtn.addEventListener("click", exportFullPNG);
+  downloadZipBtn.addEventListener("click", exportZip);
 
   // ---- init ----
   shapeSelect.value = "left";
