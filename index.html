@@ -73,6 +73,44 @@
     font-size:12.5px;
     width:100%;
   }
+  .dropzone{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    text-align:center;
+    padding:20px 10px;
+    border:2px dashed var(--panel-border);
+    border-radius:10px;
+    background:#fafafc;
+    cursor:pointer;
+    transition:border-color .12s ease, background .12s ease;
+  }
+  .dropzone:hover{
+    border-color:var(--accent);
+    background:#f5f8ff;
+  }
+  .dropzone.dragover{
+    border-color:var(--accent);
+    background:#eef4ff;
+  }
+  .dropzone .dz-icon{
+    font-size:20px;
+    line-height:1;
+    color:var(--muted);
+  }
+  .dropzone .dz-text{
+    font-size:12.5px;
+    color:var(--text);
+  }
+  .dropzone .dz-subtext{
+    font-size:11.5px;
+    color:var(--muted);
+  }
+  .dropzone input[type="file"]{
+    display:none;
+  }
   .btn{
     display:inline-flex;
     align-items:center;
@@ -303,8 +341,13 @@
     <p class="sub">Upload one or more images to add layers. Click a layer below to select it, then drag inside the outline to move it, use the corner handles to resize, and the top handle (or shift + scroll, or the [ ] keys) to rotate. Drag the ⋮⋮ handle in the layers list to change which layer sits on top.</p>
 
     <div class="field">
-      <label for="imageInput">Add image layer(s)</label>
-      <input type="file" id="imageInput" accept="image/*" multiple>
+      <label>Add image layer(s)</label>
+      <label class="dropzone" id="dropzone" for="imageInput">
+        <span class="dz-icon">⇪</span>
+        <span class="dz-text">Drag &amp; drop images here</span>
+        <span class="dz-subtext">or click to browse — multiple files become separate layers</span>
+        <input type="file" id="imageInput" accept="image/*" multiple>
+      </label>
     </div>
 
     <div class="field">
@@ -425,6 +468,7 @@
   const stageContainer = document.getElementById("stageContainer");
   const handleLayer = document.getElementById("handleLayer");
   const imageInput = document.getElementById("imageInput");
+  const dropzone = document.getElementById("dropzone");
   const layersList = document.getElementById("layersList");
   const shapeSelect = document.getElementById("shapeSelect");
   const fitBtn = document.getElementById("fitBtn");
@@ -1003,6 +1047,31 @@
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
     loadFilesSequentially(files).then(() => { imageInput.value = ""; });
+  });
+
+  // ---- events: drag & drop images onto the dropzone ----
+  let dragDepth = 0;
+  dropzone.addEventListener("dragenter", (e) => {
+    e.preventDefault();
+    dragDepth += 1;
+    dropzone.classList.add("dragover");
+  });
+  dropzone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  });
+  dropzone.addEventListener("dragleave", (e) => {
+    e.preventDefault();
+    dragDepth = Math.max(0, dragDepth - 1);
+    if (dragDepth === 0) dropzone.classList.remove("dragover");
+  });
+  dropzone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dragDepth = 0;
+    dropzone.classList.remove("dragover");
+    const files = Array.from(e.dataTransfer.files || []).filter((f) => f.type.startsWith("image/"));
+    if (!files.length) return;
+    loadFilesSequentially(files);
   });
 
   function loadFilesSequentially(files){
