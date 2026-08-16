@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PMAG 30 Customizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto&family=Montserrat&family=Oswald&family=Bebas+Neue&family=Anton&family=Playfair+Display&family=Merriweather&family=Cinzel&family=Roboto+Mono&family=Dancing+Script&family=Pacifico&display=swap" rel="stylesheet">
 <style>
   :root{
     --panel-bg:#ffffff;
@@ -23,7 +26,7 @@
   }
   .app{
     display:flex;
-    min-height:100vh;
+    height:100vh;
     align-items:stretch;
   }
   .panel{
@@ -33,6 +36,7 @@
     border-right:1px solid var(--panel-border);
     padding:20px 18px;
     overflow-y:auto;
+    min-height:0;
   }
   .panel h1{
     font-size:17px;
@@ -74,42 +78,26 @@
     width:100%;
   }
   .dropzone{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    gap:4px;
-    text-align:center;
-    padding:20px 10px;
     border:2px dashed var(--panel-border);
-    border-radius:10px;
-    background:#fafafc;
+    border-radius:8px;
+    padding:18px 10px;
+    text-align:center;
+    font-size:12.5px;
+    color:var(--muted);
     cursor:pointer;
-    transition:border-color .12s ease, background .12s ease;
+    transition:background .12s ease, border-color .12s ease;
   }
   .dropzone:hover{
-    border-color:var(--accent);
-    background:#f5f8ff;
+    background:#f7f9fc;
+    border-color:#c7cbd4;
   }
   .dropzone.dragover{
+    background:#eaf1fe;
     border-color:var(--accent);
-    background:#eef4ff;
-  }
-  .dropzone .dz-icon{
-    font-size:20px;
-    line-height:1;
-    color:var(--muted);
-  }
-  .dropzone .dz-text{
-    font-size:12.5px;
     color:var(--text);
   }
-  .dropzone .dz-subtext{
-    font-size:11.5px;
-    color:var(--muted);
-  }
-  .dropzone input[type="file"]{
-    display:none;
+  .dropzone strong{
+    color:var(--text);
   }
   .btn{
     display:inline-flex;
@@ -142,75 +130,117 @@
     font-weight:600;
   }
   .btn-primary:hover{background:#2f6fdb;}
+  .btn-primary + .btn-primary{
+    margin-top:8px;
+  }
   .checkbox-row{
     display:flex;
     align-items:center;
     gap:8px;
     font-size:13px;
   }
+  textarea, select{
+    font-family:inherit;
+  }
+  .cmyk-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:6px;
+  }
+  .cmyk-row label{
+    width:14px;
+    font-size:12px;
+    font-weight:600;
+    color:var(--text);
+    flex:0 0 auto;
+  }
+  .cmyk-row input[type="range"]{
+    flex:1 1 auto;
+  }
+  .cmyk-row span.val{
+    font-size:12px;
+    color:var(--muted);
+    width:38px;
+    text-align:right;
+    flex:0 0 auto;
+  }
+  .color-swatch{
+    width:24px;
+    height:24px;
+    border-radius:6px;
+    border:1px solid var(--panel-border);
+    flex:0 0 auto;
+  }
+  .color-wheel-wrap{
+    display:flex;
+    justify-content:center;
+    margin:4px 0 2px;
+  }
+  .color-wheel{
+    position:relative;
+    width:160px;
+    height:160px;
+    border-radius:50%;
+    background:
+      radial-gradient(circle, #fff 0%, rgba(255,255,255,0) 70%),
+      conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
+    border:1px solid var(--panel-border);
+    cursor:crosshair;
+    touch-action:none;
+  }
+  .color-wheel-dot{
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:16px;
+    height:16px;
+    border-radius:50%;
+    border:2px solid #fff;
+    box-shadow:0 1px 4px rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.25);
+    transform:translate(-50%,-50%);
+    pointer-events:none;
+  }
   hr.sep{
     border:none;
     border-top:1px solid var(--panel-border);
     margin:18px 0;
   }
-  .layers-list{
-    display:flex;
-    flex-direction:column;
-    gap:6px;
-    max-height:260px;
-    overflow-y:auto;
-    padding-right:2px;
-  }
-  .layer-item{
-    position:relative;
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding:6px 8px;
+  .layer-list{
+    list-style:none;
+    margin:0;
+    padding:0;
     border:1px solid var(--panel-border);
     border-radius:8px;
+    overflow:hidden;
+  }
+  .layer-item{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    padding:7px 8px;
+    font-size:12.5px;
     background:#fff;
+    border-bottom:1px solid var(--panel-border);
     cursor:pointer;
     user-select:none;
-    transition:border-color .12s ease, background .12s ease;
   }
+  .layer-item:last-child{border-bottom:none;}
   .layer-item.active{
-    border-color:var(--accent);
-    background:#eef4ff;
+    background:#eaf1fe;
+    outline:1px solid var(--accent);
+    outline-offset:-1px;
   }
-  .layer-item.dragging{
-    opacity:.55;
-    box-shadow:0 4px 10px rgba(0,0,0,.18);
-    z-index:5;
-  }
-  .layer-item .drag-handle{
+  .layer-item.dragging{opacity:.4;}
+  .layer-drag-handle{
     cursor:grab;
     color:var(--muted);
     font-size:14px;
     line-height:1;
-    padding:2px;
-    touch-action:none;
     flex:0 0 auto;
-  }
-  .layer-item .drag-handle:active{cursor:grabbing;}
-  .layer-thumb{
-    width:32px;
-    height:32px;
-    object-fit:cover;
-    border-radius:4px;
-    border:1px solid var(--panel-border);
-    flex:0 0 auto;
-    background-image:
-      linear-gradient(45deg, #e6e6ea 25%, transparent 25%),
-      linear-gradient(-45deg, #e6e6ea 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, #e6e6ea 75%),
-      linear-gradient(-45deg, transparent 75%, #e6e6ea 75%);
-    background-size:8px 8px;
-    background-position:0 0, 0 4px, 4px -4px, -4px 0px;
   }
   .layer-name{
     flex:1 1 auto;
-    font-size:12.5px;
     overflow:hidden;
     text-overflow:ellipsis;
     white-space:nowrap;
@@ -220,36 +250,24 @@
     border:none;
     background:transparent;
     color:var(--muted);
-    font-size:16px;
+    font-size:15px;
     line-height:1;
     cursor:pointer;
-    padding:2px 4px;
+    padding:2px 5px;
     border-radius:4px;
   }
-  .layer-remove:hover{background:#fbe4e4;color:#c0392b;}
-  .layers-empty{
-    font-size:12.5px;
+  .layer-remove:hover{background:#f2f3f5;color:#c0392b;}
+  .layer-empty{
+    padding:10px 8px;
+    font-size:12px;
     color:var(--muted);
-    padding:14px 8px;
     text-align:center;
-    border:1px dashed var(--panel-border);
-    border-radius:8px;
   }
-  .layer-item.drop-indicator::before{
-    content:"";
-    position:absolute;
-    left:0;right:0;top:-4px;
-    height:2px;
-    background:var(--accent);
-    border-radius:1px;
-  }
-  .layer-item.drop-indicator-after::after{
-    content:"";
-    position:absolute;
-    left:0;right:0;bottom:-4px;
-    height:2px;
-    background:var(--accent);
-    border-radius:1px;
+  .download-note{
+    font-size:11.5px;
+    line-height:1.5;
+    color:var(--muted);
+    margin:12px 0 0;
   }
   .stage-wrap{
     flex:1 1 auto;
@@ -257,13 +275,14 @@
     flex-direction:column;
     align-items:center;
     justify-content:center;
-    padding:30px;
+    padding:20px;
     gap:14px;
+    min-height:0;
   }
   .stage-container{
     position:relative;
-    height:min(82vh, 720px);
-    aspect-ratio:286.57 / 732.93;
+    height:80vh;
+    width:100%;
     border-radius:10px;
     overflow:hidden;
     box-shadow:0 1px 3px rgba(0,0,0,.12), 0 8px 24px rgba(0,0,0,.08);
@@ -308,29 +327,37 @@
     background:var(--accent);
     border-color:#fff;
   }
+  .handle.edge{
+    border-radius:4px;
+    background:var(--accent);
+    border-color:#fff;
+  }
+  .handle.edge-h{
+    width:10px;
+    height:18px;
+  }
+  .handle.edge-v{
+    width:18px;
+    height:10px;
+  }
+  .shape-btn-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:6px;
+  }
+  .shape-btn-grid .btn{
+    width:100%;
+  }
   .hint{
     font-size:12.5px;
     color:var(--muted);
     text-align:center;
     max-width:420px;
   }
-  .download-note{
-    font-size:12px;
-    line-height:1.5;
-    color:var(--muted);
-    margin:12px 0 0;
-    padding:10px 12px;
-    background:#f7f8fa;
-    border:1px solid var(--panel-border);
-    border-radius:8px;
-  }
-  .download-note a{
-    color:var(--accent);
-  }
   @media (max-width:760px){
-    .app{flex-direction:column;}
-    .panel{width:auto;flex:none;border-right:none;border-bottom:1px solid var(--panel-border);}
-    .stage-container{height:min(60vh, 560px);}
+    .app{flex-direction:column;height:auto;min-height:100vh;}
+    .panel{width:auto;flex:none;border-right:none;border-bottom:1px solid var(--panel-border);overflow-y:visible;max-height:none;}
+    .stage-container{height:80vh;}
   }
 </style>
 </head>
@@ -338,21 +365,36 @@
 <div class="app">
   <aside class="panel">
     <h1>PMAG 30 Customizer</h1>
-    <p class="sub">Upload one or more images to add layers. Click a layer below to select it, then drag inside the outline to move it, use the corner handles to resize, and the top handle (or shift + scroll, or the [ ] keys) to rotate. Drag the ⋮⋮ handle in the layers list to change which layer sits on top.</p>
+    <p class="sub">Upload one or more images or add text layers, then drag to move, use the corner handles to resize, and the top handle (or shift + scroll, or the [ ] keys) to rotate. Layers only show through the colored area of the shape. Reorder layers by dragging them in the list below.</p>
 
     <div class="field">
-      <label>Add image layer(s)</label>
-      <label class="dropzone" id="dropzone" for="imageInput">
-        <span class="dz-icon">⇪</span>
-        <span class="dz-text">Drag &amp; drop images here</span>
-        <span class="dz-subtext">or click to browse — multiple files become separate layers</span>
-        <input type="file" id="imageInput" accept="image/*" multiple>
-      </label>
+      <label for="imageInput">Add image layer</label>
+      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Drop images here or click to browse">
+        <strong>Drag &amp; drop images here</strong><br>or click to browse — multiple images each become their own layer
+      </div>
+      <input type="file" id="imageInput" accept="image/*" multiple style="display:none;">
+    </div>
+
+    <div class="field">
+      <label>Add text layer</label>
+      <button class="btn" id="addTextBtn" style="width:100%;">+ Add text</button>
+    </div>
+
+    <div class="field">
+      <label>Add shape layer</label>
+      <div class="shape-btn-grid">
+        <button class="btn" data-shape-kind="star">★ Star</button>
+        <button class="btn" data-shape-kind="rectangle">▭ Rectangle</button>
+        <button class="btn" data-shape-kind="square">◻ Square</button>
+        <button class="btn" data-shape-kind="ellipse">⬭ Ellipse</button>
+        <button class="btn" data-shape-kind="circle">○ Circle</button>
+        <button class="btn" data-shape-kind="line">─ Line</button>
+      </div>
     </div>
 
     <div class="field">
       <label>Layers</label>
-      <div id="layersList" class="layers-list"></div>
+      <ul class="layer-list" id="layerList"></ul>
     </div>
 
     <div class="btn-row" style="margin-bottom:18px;">
@@ -378,6 +420,75 @@
       </div>
     </div>
 
+    <div class="field">
+      <label for="opacityRange">Opacity <span id="opacityLabel" style="font-weight:400;color:var(--muted);">100%</span></label>
+      <div class="row">
+        <input type="range" id="opacityRange" min="0" max="100" value="100" step="1" disabled>
+      </div>
+    </div>
+
+    <div id="shapeFieldsGroup" style="display:none;">
+      <div class="field">
+        <label for="shapeKindSelect">Shape type</label>
+        <select id="shapeKindSelect" style="width:100%;padding:7px 8px;font-size:13px;border-radius:8px;border:1px solid var(--panel-border);">
+          <option value="star">Star</option>
+          <option value="rectangle">Rectangle</option>
+          <option value="square">Square</option>
+          <option value="ellipse">Ellipse</option>
+          <option value="circle">Circle</option>
+          <option value="line">Line</option>
+        </select>
+      </div>
+      <div class="field checkbox-row" id="shapeFilledRow">
+        <input type="checkbox" id="shapeFilledCheckbox" checked>
+        <label for="shapeFilledCheckbox" style="margin:0;font-weight:400;">Filled shape (uncheck for outline only)</label>
+      </div>
+      <div class="field" id="shapeStrokeWidthField" style="display:none;">
+        <label for="shapeStrokeWidthRange">Line width <span id="shapeStrokeWidthLabel" style="font-weight:400;color:var(--muted);">6</span></label>
+        <div class="row">
+          <input type="range" id="shapeStrokeWidthRange" min="1" max="40" value="6" step="1">
+        </div>
+      </div>
+    </div>
+
+    <div id="colorFieldsGroup" style="display:none;">
+      <div class="field">
+        <label>Color (CMYK)</label>
+        <div class="color-wheel-wrap">
+          <div class="color-wheel" id="colorWheel" role="slider" aria-label="Color hue and saturation" tabindex="0">
+            <div class="color-wheel-dot" id="colorWheelDot"></div>
+          </div>
+        </div>
+        <div class="cmyk-row" style="margin-top:10px;">
+          <label for="cmykK">K</label>
+          <input type="range" id="cmykK" min="0" max="100" value="100" step="1">
+          <span class="val" id="cmykKVal">100%</span>
+        </div>
+        <div class="row" style="margin-top:8px;">
+          <span style="font-size:12px;color:var(--muted);">Preview</span>
+          <span class="color-swatch" id="colorSwatch"></span>
+          <span id="cmykReadout" style="font-size:11px;color:var(--muted);margin-left:auto;"></span>
+        </div>
+      </div>
+    </div>
+
+    <div id="textFieldsGroup" style="display:none;">
+      <div class="field">
+        <label for="textContentInput">Text content</label>
+        <textarea id="textContentInput" rows="2" style="width:100%;padding:7px 8px;font-size:13px;border-radius:8px;border:1px solid var(--panel-border);resize:vertical;"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="fontSelect">Font</label>
+        <select id="fontSelect" style="width:100%;padding:7px 8px;font-size:13px;border-radius:8px;border:1px solid var(--panel-border);">
+          <optgroup label="Built-in fonts" id="builtinFontGroup"></optgroup>
+          <optgroup label="Custom fonts" id="customFontGroup"></optgroup>
+          <option value="__upload__">+ Upload custom font (.ttf/.otf)…</option>
+        </select>
+        <input type="file" id="fontFileInput" accept=".ttf,.otf,font/ttf,font/otf" style="display:none;">
+      </div>
+    </div>
+
     <div class="field checkbox-row">
       <input type="checkbox" id="guideCheckbox" checked>
       <label for="guideCheckbox" style="margin:0;font-weight:400;">Show image outline guide</label>
@@ -391,13 +502,16 @@
         <option value="left">PMAG 30 Left</option>
         <option value="right">PMAG 30 Right</option>
       </select>
+      <div class="checkbox-row" style="margin-top:8px;">
+        <input type="checkbox" id="levelViewCheckbox">
+        <label for="levelViewCheckbox" style="margin:0;font-weight:400;">Level view (bottom parallel to ground)</label>
+      </div>
     </div>
 
     <hr class="sep">
 
-    <button class="btn btn-primary" id="downloadZipBtn" disabled title="Download a zip with the mockup JPG, the full-quality layered PNG, and your original uploaded images.">Download ZIP</button>
-
-    <p class="download-note">Download the zip for each side of the PMAG (left and right) — it contains the mockup JPG, the full-quality PNG, and your original uploaded images — then email them to <a href="mailto:ross@regulusarms.com">ross@regulusarms.com</a> with your GunBroker order number as the subject line.</p>
+    <button class="btn btn-primary" id="downloadZipBtn" disabled title="Downloads a zip containing the JPG mockup, the full quality PNG layers, and your original uploaded images">Download ZIP</button>
+    <p class="download-note">Download the zip for each side of the PMAG (left and right), then email them to ross@regulusarms.com with your GunBroker order number or square order number as the subject line.</p>
   </aside>
 
   <main class="stage-wrap">
@@ -408,13 +522,18 @@
         <div class="handle corner" id="handle-tr" style="cursor:nesw-resize;"></div>
         <div class="handle corner" id="handle-br" style="cursor:nwse-resize;"></div>
         <div class="handle corner" id="handle-bl" style="cursor:nesw-resize;"></div>
+        <div class="handle edge edge-v" id="handle-top" title="Stretch" style="cursor:ns-resize;"></div>
+        <div class="handle edge edge-v" id="handle-bottom" title="Stretch" style="cursor:ns-resize;"></div>
+        <div class="handle edge edge-h" id="handle-left" title="Stretch" style="cursor:ew-resize;"></div>
+        <div class="handle edge edge-h" id="handle-right" title="Stretch" style="cursor:ew-resize;"></div>
         <div class="handle rotate" id="handle-rotate" title="Rotate"></div>
       </div>
     </div>
-    <p class="hint">Click a layer in the list to select it, drag inside its outline to move it, drag a corner to resize. Rotate by dragging the blue dot above it, holding shift while scrolling over the image, or pressing the [ and ] keys. The image only shows through the colored area of the shape.</p>
+    <p class="hint">Add an image, drag inside the outline to move it, drag a corner to resize. Rotate by dragging the blue dot above it, holding shift while scrolling over the image, or pressing the [ and ] keys. Scroll to zoom the workspace, or hold the middle mouse button to pan it.</p>
   </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script>
 (function(){
   "use strict";
@@ -456,12 +575,51 @@
     right: { label: "PMAG 30 Right", svg: SVG_RIGHT }
   };
 
+  const BASE_FONT_SIZE = 80;
+  // built-in fonts are loaded from Google Fonts (see <link> in <head>) rather than named
+  // OS system fonts — system font names like "Impact" or "Palatino Linotype" silently no-op
+  // on machines that don't have them installed, which is why some "built-in fonts" used to
+  // look identical no matter which one was picked. Google Fonts always renders the same
+  // everywhere. `google` is also the lookup key used to embed each one as a data URI for
+  // export (see ensureGoogleFontEmbedded) so rasterized JPG/PNG exports keep the right font.
+  const BUILTIN_FONTS = [
+    { value: `"Roboto", Arial, sans-serif`, label: "Roboto", google: "Roboto" },
+    { value: `"Montserrat", Arial, sans-serif`, label: "Montserrat", google: "Montserrat" },
+    { value: `"Oswald", Impact, sans-serif`, label: "Oswald (Condensed)", google: "Oswald" },
+    { value: `"Bebas Neue", Impact, sans-serif`, label: "Bebas Neue (Bold Display)", google: "Bebas Neue" },
+    { value: `"Anton", Impact, sans-serif`, label: "Anton (Heavy Display)", google: "Anton" },
+    { value: `"Playfair Display", Georgia, serif`, label: "Playfair Display", google: "Playfair Display" },
+    { value: `"Merriweather", Georgia, serif`, label: "Merriweather", google: "Merriweather" },
+    { value: `"Cinzel", Georgia, serif`, label: "Cinzel (Engraved)", google: "Cinzel" },
+    { value: `"Roboto Mono", "Courier New", monospace`, label: "Roboto Mono", google: "Roboto Mono" },
+    { value: `"Dancing Script", cursive`, label: "Dancing Script (Script)", google: "Dancing Script" },
+    { value: `"Pacifico", cursive`, label: "Pacifico (Casual Script)", google: "Pacifico" }
+  ];
+
+  // default bounding-box size (local, unscaled units — same convention as BASE_FONT_SIZE)
+  // for a freshly-added shape layer of each kind.
+  const SHAPE_DEFAULTS = {
+    star: { w: 200, h: 200 },
+    rectangle: { w: 240, h: 160 },
+    square: { w: 180, h: 180 },
+    ellipse: { w: 240, h: 160 },
+    circle: { w: 180, h: 180 },
+    line: { w: 240, h: 24 }
+  };
+
   // ---- state ----
-  let bg = null;          // { w, h, viewBox, bgClones, clipClones, clipBBoxRect }
-  let layers = [];         // layers[0] = topmost (frontmost). each: {id, naturalW, naturalH, dataURL, name, xform:{cx,cy,scale,rot}, fitScale}
-  let activeLayerId = null;
+  let bg = null;              // { w, h, viewBox, bgClones, clipClones, clipBBoxRect }
+  let layers = [];             // [{ id, type:'image'|'text'|'shape', name, naturalW, naturalH, xform:{cx,cy,scale,rot}, fitScale, opacity, ... }]
+  let selectedLayerId = null;
+  let layerIdCounter = 0;
   let showGuide = true;
-  let layerCounter = 0;
+  let currentShapeLabel = "";
+  let dragSrcLi = null;
+  let levelView = false;      // display-only: show the shape rotated so its bottom edge is level
+  const view = { scale: 1, tx: 0, ty: 0 }; // workspace pan/zoom (CSS transform on #stage, separate from layer xforms)
+  const MIN_VIEW_SCALE = 0.25, MAX_VIEW_SCALE = 10;
+  let customFonts = {};        // familyName -> data URL
+  let customFontCounter = 0;
 
   // ---- dom refs ----
   const stage = document.getElementById("stage");
@@ -469,8 +627,9 @@
   const handleLayer = document.getElementById("handleLayer");
   const imageInput = document.getElementById("imageInput");
   const dropzone = document.getElementById("dropzone");
-  const layersList = document.getElementById("layersList");
+  const layerListEl = document.getElementById("layerList");
   const shapeSelect = document.getElementById("shapeSelect");
+  const levelViewCheckbox = document.getElementById("levelViewCheckbox");
   const fitBtn = document.getElementById("fitBtn");
   const removeImgBtn = document.getElementById("removeImgBtn");
   const zoomRange = document.getElementById("zoomRange");
@@ -481,17 +640,389 @@
   const rotRightBtn = document.getElementById("rotRightBtn");
   const guideCheckbox = document.getElementById("guideCheckbox");
   const downloadZipBtn = document.getElementById("downloadZipBtn");
+  const addTextBtn = document.getElementById("addTextBtn");
+  const textFieldsGroup = document.getElementById("textFieldsGroup");
+  const textContentInput = document.getElementById("textContentInput");
+  const fontSelect = document.getElementById("fontSelect");
+  const fontFileInput = document.getElementById("fontFileInput");
+  const builtinFontGroup = document.getElementById("builtinFontGroup");
+  const customFontGroup = document.getElementById("customFontGroup");
+  const colorFieldsGroup = document.getElementById("colorFieldsGroup");
+  const colorWheel = document.getElementById("colorWheel");
+  const colorWheelDot = document.getElementById("colorWheelDot");
+  const cmykK = document.getElementById("cmykK");
+  const cmykKVal = document.getElementById("cmykKVal");
+  const colorSwatch = document.getElementById("colorSwatch");
+  const cmykReadout = document.getElementById("cmykReadout");
+  const opacityRange = document.getElementById("opacityRange");
+  const opacityLabel = document.getElementById("opacityLabel");
+  const addShapeButtons = document.querySelectorAll("[data-shape-kind]");
+  const shapeFieldsGroup = document.getElementById("shapeFieldsGroup");
+  const shapeKindSelect = document.getElementById("shapeKindSelect");
+  const shapeFilledRow = document.getElementById("shapeFilledRow");
+  const shapeFilledCheckbox = document.getElementById("shapeFilledCheckbox");
+  const shapeStrokeWidthField = document.getElementById("shapeStrokeWidthField");
+  const shapeStrokeWidthRange = document.getElementById("shapeStrokeWidthRange");
+  const shapeStrokeWidthLabel = document.getElementById("shapeStrokeWidthLabel");
+
+  // ---- shared: which layer types use the color wheel / are colorable ----
+  function isColorableLayer(layer){
+    return !!layer && (layer.type === "text" || layer.type === "shape");
+  }
 
   // ---- layer helpers ----
-  function getActiveLayer(){
-    return layers.find((l) => l.id === activeLayerId) || null;
+  function getSelectedLayer(){
+    return layers.find((l) => l.id === selectedLayerId) || null;
   }
-  function genLayerId(){
-    layerCounter += 1;
-    return "layer-" + layerCounter + "-" + Math.random().toString(36).slice(2, 7);
+
+  function transformString(xform){
+    return `translate(${xform.cx} ${xform.cy}) rotate(${xform.rot}) scale(${xform.scale})`;
   }
-  function transformString(xf){
-    return `translate(${xf.cx} ${xf.cy}) rotate(${xf.rot}) scale(${xf.scale})`;
+
+  // ---- text layer helpers ----
+  function cmykToHex(c, m, y, k){
+    c/=100; m/=100; y/=100; k/=100;
+    const r = Math.round(255 * (1-c) * (1-k));
+    const g = Math.round(255 * (1-m) * (1-k));
+    const b = Math.round(255 * (1-y) * (1-k));
+    return "#" + [r,g,b].map((v) => Math.max(0, Math.min(255, v)).toString(16).padStart(2, "0")).join("");
+  }
+
+  // ---- color wheel (hue/saturation, at full value) <-> CMY, matched to the wheel's ----
+  // ---- CSS conic-gradient which starts at the top (hue 0) and sweeps clockwise.     ----
+  function hsvToRgb(h, s, v){
+    h = ((h % 360) + 360) % 360;
+    const c = v * s;
+    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    const m = v - c;
+    let r, g, b;
+    if (h < 60){ r=c; g=x; b=0; }
+    else if (h < 120){ r=x; g=c; b=0; }
+    else if (h < 180){ r=0; g=c; b=x; }
+    else if (h < 240){ r=0; g=x; b=c; }
+    else if (h < 300){ r=x; g=0; b=c; }
+    else { r=c; g=0; b=x; }
+    return { r: r+m, g: g+m, b: b+m };
+  }
+
+  function rgbToHsv(r, g, b){
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const d = max - min;
+    let h = 0;
+    if (d !== 0){
+      if (max === r) h = 60 * (((g - b) / d) % 6);
+      else if (max === g) h = 60 * ((b - r) / d + 2);
+      else h = 60 * ((r - g) / d + 4);
+    }
+    if (h < 0) h += 360;
+    const s = max === 0 ? 0 : d / max;
+    return { h, s, v: max };
+  }
+
+  function positionWheelDot(hue, sat){
+    const rad = hue * Math.PI / 180;
+    const x = 50 + sat * 50 * Math.sin(rad);
+    const y = 50 - sat * 50 * Math.cos(rad);
+    colorWheelDot.style.left = x + "%";
+    colorWheelDot.style.top = y + "%";
+  }
+
+  function updateColorReadout(layer){
+    const c = Math.round(layer.color.c), m = Math.round(layer.color.m), y = Math.round(layer.color.y), k = Math.round(layer.color.k);
+    cmykReadout.textContent = `C${c} M${m} Y${y} K${k}`;
+    colorSwatch.style.background = layer.fillColor;
+  }
+
+  function setColorFromWheel(hue, sat){
+    const selected = getSelectedLayer();
+    if (!isColorableLayer(selected)) return;
+    const rgb = hsvToRgb(hue, sat, 1);
+    const c = (1 - rgb.r) * 100, m = (1 - rgb.g) * 100, y = (1 - rgb.b) * 100;
+    const k = parseFloat(cmykK.value);
+    selected.color = { c, m, y, k };
+    selected.fillColor = cmykToHex(c, m, y, k);
+    positionWheelDot(hue, sat);
+    updateColorReadout(selected);
+    buildStage();
+  }
+
+  function wheelPointFromEvent(e){
+    const rect = colorWheel.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+    const R = rect.width / 2;
+    let dx = e.clientX - cx, dy = e.clientY - cy;
+    let r = Math.hypot(dx, dy);
+    if (r > R && r > 0){ dx = dx * R / r; dy = dy * R / r; r = R; }
+    const sat = R === 0 ? 0 : r / R;
+    let hue = Math.atan2(dx, -dy) * 180 / Math.PI;
+    if (hue < 0) hue += 360;
+    return { hue, sat };
+  }
+
+  function createTextElement(layer){
+    const textEl = document.createElementNS(NS, "text");
+    textEl.setAttribute("x", "0");
+    textEl.setAttribute("text-anchor", "middle");
+    textEl.setAttribute("font-family", layer.fontFamily);
+    textEl.setAttribute("font-size", String(BASE_FONT_SIZE));
+    textEl.setAttribute("fill", layer.fillColor);
+    textEl.setAttribute("style", "white-space:pre;");
+    const lines = (layer.text || "").split("\n");
+    lines.forEach((line, i) => {
+      const tspan = document.createElementNS(NS, "tspan");
+      tspan.setAttribute("x", "0");
+      if (i > 0) tspan.setAttribute("dy", "1.2em");
+      tspan.textContent = line.length ? line : " ";
+      textEl.appendChild(tspan);
+    });
+    return textEl;
+  }
+
+  function createTextGroup(layer){
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("transform", `translate(${-(layer.textOffsetX||0)} ${-(layer.textOffsetY||0)})`);
+    g.appendChild(createTextElement(layer));
+    return g;
+  }
+
+  // ---- shape layer helpers ----
+  function starPath(hw, hh){
+    const outerR = Math.min(hw, hh);
+    const innerR = outerR * 0.382;
+    const pts = [];
+    for (let i = 0; i < 10; i++){
+      const r = i % 2 === 0 ? outerR : innerR;
+      const angle = -Math.PI/2 + i * Math.PI/5;
+      pts.push(`${(r*Math.cos(angle)).toFixed(2)},${(r*Math.sin(angle)).toFixed(2)}`);
+    }
+    return "M" + pts.join("L") + "Z";
+  }
+
+  function createShapeElement(layer){
+    const hw = layer.naturalW/2, hh = layer.naturalH/2;
+    const isLine = layer.shapeKind === "line";
+    const filled = !isLine && layer.filled;
+    let el;
+    switch (layer.shapeKind){
+      case "rectangle":
+      case "square":
+        el = document.createElementNS(NS, "rect");
+        el.setAttribute("x", String(-hw));
+        el.setAttribute("y", String(-hh));
+        el.setAttribute("width", String(layer.naturalW));
+        el.setAttribute("height", String(layer.naturalH));
+        break;
+      case "circle":
+      case "ellipse":
+        el = document.createElementNS(NS, "ellipse");
+        el.setAttribute("cx", "0");
+        el.setAttribute("cy", "0");
+        el.setAttribute("rx", String(hw));
+        el.setAttribute("ry", String(hh));
+        break;
+      case "star":
+        el = document.createElementNS(NS, "path");
+        el.setAttribute("d", starPath(hw, hh));
+        break;
+      case "line":
+      default:
+        el = document.createElementNS(NS, "line");
+        el.setAttribute("x1", String(-hw));
+        el.setAttribute("y1", "0");
+        el.setAttribute("x2", String(hw));
+        el.setAttribute("y2", "0");
+        break;
+    }
+    if (isLine || !filled){
+      el.setAttribute("fill", "none");
+      el.setAttribute("stroke", layer.fillColor);
+      el.setAttribute("stroke-width", String(layer.strokeWidth));
+      el.setAttribute("stroke-linecap", "round");
+      el.setAttribute("stroke-linejoin", "round");
+    } else {
+      el.setAttribute("fill", layer.fillColor);
+      el.setAttribute("stroke", "none");
+    }
+    return el;
+  }
+
+  // measures a text layer's rendered bounding box at BASE_FONT_SIZE so its handles/guide
+  // can use naturalW/naturalH exactly like an image layer's pixel dimensions do.
+  function measureTextLayer(layer){
+    const hidden = document.createElement("div");
+    hidden.style.cssText = "position:absolute;left:-99999px;top:0;width:0;height:0;overflow:hidden;";
+    document.body.appendChild(hidden);
+    const svg = document.createElementNS(NS, "svg");
+    hidden.appendChild(svg);
+    const textEl = createTextElement(layer);
+    svg.appendChild(textEl);
+    let bbox;
+    try{ bbox = textEl.getBBox(); }catch(e){ bbox = { x:0, y:0, width:10, height:10 }; }
+    document.body.removeChild(hidden);
+    layer.naturalW = Math.max(1, bbox.width);
+    layer.naturalH = Math.max(1, bbox.height);
+    layer.textOffsetX = bbox.x + bbox.width/2;
+    layer.textOffsetY = bbox.y + bbox.height/2;
+  }
+
+  // ---- custom font handling ----
+  function injectFontFaceStyle(){
+    let styleEl = document.getElementById("customFontFaceStyle");
+    if (!styleEl){
+      styleEl = document.createElement("style");
+      styleEl.id = "customFontFaceStyle";
+      document.head.appendChild(styleEl);
+    }
+    styleEl.textContent = Object.keys(customFonts).map((name) =>
+      `@font-face{font-family:"${name}";src:url(${customFonts[name]});}`
+    ).join("\n");
+  }
+
+  // builds an SVG <style> with the same @font-face rules so exported/rasterized SVGs
+  // (rendered outside this document) stay self-contained and keep using the right font.
+  function buildFontFaceDefsStyle(){
+    const names = Object.keys(customFonts);
+    if (!names.length) return null;
+    const styleEl = document.createElementNS(NS, "style");
+    styleEl.textContent = names.map((name) =>
+      `@font-face{font-family:"${name}";src:url(${customFonts[name]});}`
+    ).join("\n");
+    return styleEl;
+  }
+
+  function registerCustomFont(familyName, dataURL){
+    customFonts[familyName] = dataURL;
+    injectFontFaceStyle();
+  }
+
+  function addCustomFontOption(value, label){
+    const opt = document.createElement("option");
+    opt.value = value;
+    opt.textContent = label;
+    customFontGroup.appendChild(opt);
+  }
+
+  function loadFontAndThen(familyName, cb){
+    if (document.fonts && document.fonts.load){
+      document.fonts.load(`16px "${familyName}"`).then(() => cb()).catch(() => cb());
+    } else {
+      setTimeout(cb, 50);
+    }
+  }
+
+  // ---- embedding built-in Google Fonts as data URIs ----
+  // the <link> stylesheet in <head> covers the live editor, but exported/rasterized SVGs
+  // are rendered in an isolated context that can't see page stylesheets — only fonts baked
+  // into the SVG's own @font-face (via customFonts) survive export, same as uploaded fonts.
+  function fetchGoogleFontDataURI(family){
+    const q = encodeURIComponent(family).replace(/%20/g, "+");
+    return fetch(`https://fonts.googleapis.com/css2?family=${q}&display=swap`)
+      .then((r) => r.text())
+      .then((cssText) => {
+        const match = cssText.match(/src:\s*url\(([^)]+)\)\s*format\('woff2'\)/) || cssText.match(/src:\s*url\(([^)]+)\)/);
+        if (!match) throw new Error("No font file URL found for " + family);
+        return fetch(match[1]).then((r) => r.blob());
+      })
+      .then((blob) => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      }));
+  }
+
+  const googleFontEmbedPromises = {};
+  function ensureGoogleFontEmbedded(familyName){
+    if (customFonts[familyName]) return Promise.resolve();
+    if (googleFontEmbedPromises[familyName]) return googleFontEmbedPromises[familyName];
+    const p = fetchGoogleFontDataURI(familyName)
+      .then((dataURL) => {
+        registerCustomFont(familyName, dataURL);
+        let changed = false;
+        layers.forEach((l) => {
+          if (l.type === "text" && l.fontFamily.indexOf(`"${familyName}"`) !== -1){
+            measureTextLayer(l);
+            changed = true;
+          }
+        });
+        if (changed) buildStage();
+      })
+      .catch((err) => { console.warn("Could not embed font for export:", familyName, err); });
+    googleFontEmbedPromises[familyName] = p;
+    return p;
+  }
+
+  // ---- "level view": auto-detect the shape's near-horizontal bottom edge so it can be ----
+  // ---- displayed rotated flat, without hardcoding anything per-shape.                 ----
+  function convexHull(points){
+    const pts = points.slice().sort((a, b) => a.x - b.x || a.y - b.y);
+    const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+    const lower = [];
+    for (const p of pts){
+      while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
+      lower.push(p);
+    }
+    const upper = [];
+    for (let k = pts.length - 1; k >= 0; k--){
+      const p = pts[k];
+      while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
+      upper.push(p);
+    }
+    upper.pop(); lower.pop();
+    return lower.concat(upper);
+  }
+
+  // finds the convex-hull edge that reads as the shape's "bottom edge" (long, in the
+  // bottom half of the shape, already close to horizontal) and returns an SVG transform
+  // that rotates the shape level around it, then scales it to keep it fully in view.
+  function computeLevelTransform(points, bbox, w, h){
+    if (points.length < 3) return null;
+    const hull = convexHull(points);
+    if (hull.length < 2) return null;
+    const bboxH = bbox.y2 - bbox.y;
+    let best = null;
+    for (let i = 0; i < hull.length; i++){
+      const p1 = hull[i], p2 = hull[(i + 1) % hull.length];
+      const dx = p2.x - p1.x, dy = p2.y - p1.y;
+      const len = Math.hypot(dx, dy);
+      if (len < 1) continue;
+      let angleDeg = Math.atan2(dy, dx) * 180 / Math.PI;
+      if (angleDeg > 90) angleDeg -= 180;
+      if (angleDeg < -90) angleDeg += 180;
+      const midY = (p1.y + p2.y) / 2;
+      if (Math.abs(angleDeg) > 35) continue;          // not "slightly" tilted - skip
+      if (midY < bbox.y + bboxH * 0.5) continue;       // not in the bottom half - skip
+      const score = len + (midY - bbox.y);
+      if (!best || score > best.score) best = { angleDeg, score };
+    }
+    if (!best || Math.abs(best.angleDeg) < 0.5) return null;
+
+    const angle = -best.angleDeg;
+    const pivot = { x: (bbox.x + bbox.x2) / 2, y: (bbox.y + bbox.y2) / 2 };
+    const rad = angle * Math.PI / 180;
+    const cos = Math.cos(rad), sin = Math.sin(rad);
+    let rx = Infinity, ry = Infinity, rx2 = -Infinity, ry2 = -Infinity;
+    points.forEach((p) => {
+      const x = pivot.x + (p.x - pivot.x) * cos - (p.y - pivot.y) * sin;
+      const y = pivot.y + (p.x - pivot.x) * sin + (p.y - pivot.y) * cos;
+      if (x < rx) rx = x; if (x > rx2) rx2 = x;
+      if (y < ry) ry = y; if (y > ry2) ry2 = y;
+    });
+    const rotatedCenter = { x: (rx + rx2) / 2, y: (ry + ry2) / 2 };
+    const scale = Math.min(1, w / (rx2 - rx), h / (ry2 - ry)) * 0.99;
+    const viewCenter = { x: w / 2, y: h / 2 };
+
+    const str = `translate(${viewCenter.x} ${viewCenter.y}) scale(${scale}) ` +
+      `translate(${-rotatedCenter.x} ${-rotatedCenter.y}) rotate(${angle} ${pivot.x} ${pivot.y})`;
+
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("transform", str);
+    const matrix = g.transform.baseVal.consolidate().matrix;
+    return { str, matrix, matrixInv: matrix.inverse() };
+  }
+
+  function applyMatrix(m, pt){
+    return { x: m.a * pt.x + m.c * pt.y + m.e, y: m.b * pt.x + m.d * pt.y + m.f };
   }
 
   // ---- background parsing ----
@@ -539,6 +1070,7 @@
     const bgClones = [];
     const clipClones = [];
     let clipBBox = null;
+    const hullPoints = [];
 
     allShapes.forEach((el) => {
       let cs;
@@ -581,6 +1113,16 @@
             }
           }
         }catch(e){ /* ignore */ }
+        try{
+          const len = el.getTotalLength ? el.getTotalLength() : 0;
+          if (len > 0){
+            const steps = Math.max(24, Math.min(240, Math.ceil(len / 5)));
+            for (let s = 0; s <= steps; s++){
+              const pt = el.getPointAtLength((len * s) / steps);
+              hullPoints.push({ x: pt.x, y: pt.y });
+            }
+          }
+        }catch(e){ /* ignore */ }
       }
     });
 
@@ -603,29 +1145,26 @@
     bg = {
       w, h, viewBox: vb,
       bgClones, clipClones,
-      clipBBoxRect: { x:clipBBox.x, y:clipBBox.y, w:clipBBox.x2-clipBBox.x, h:clipBBox.y2-clipBBox.y }
+      clipBBoxRect: { x:clipBBox.x, y:clipBBox.y, w:clipBBox.x2-clipBBox.x, h:clipBBox.y2-clipBBox.y },
+      levelTransform: computeLevelTransform(hullPoints, clipBBox, w, h)
     };
-
-    if (layers.length){
-      layers.forEach((l) => { l.fitScale = computeFitScaleFor(l); });
-      syncZoomSlider();
-      syncRotationSlider();
+    levelViewCheckbox.disabled = !bg.levelTransform;
+    if (!bg.levelTransform){
+      levelViewCheckbox.checked = false;
+      levelView = false;
     }
+
     buildStage();
-    updateHandles();
+    setInitialView();
   }
 
   // ---- fit / transform helpers ----
-  function computeFitScaleFor(layer){
-    if (!bg) return 1;
+  function fitTransform(layer){
+    if (!layer || !bg) return;
     const cbb = bg.clipBBoxRect;
-    return Math.max(cbb.w/layer.naturalW, cbb.h/layer.naturalH) || 1;
-  }
-
-  function fitLayerTransform(layer){
-    layer.fitScale = computeFitScaleFor(layer);
-    const cbb = bg.clipBBoxRect;
-    layer.xform = { cx: cbb.x + cbb.w/2, cy: cbb.y + cbb.h/2, scale: layer.fitScale, rot: 0 };
+    const fitScale = Math.max(cbb.w/layer.naturalW, cbb.h/layer.naturalH) || 1;
+    layer.fitScale = fitScale;
+    layer.xform = { cx: cbb.x + cbb.w/2, cy: cbb.y + cbb.h/2, scale: fitScale, rot: 0 };
   }
 
   // ---- building the visible stage ----
@@ -640,47 +1179,44 @@
     clipPath.id = "userClip";
     bg.clipClones.forEach((c) => clipPath.appendChild(c.cloneNode(true)));
     defs.appendChild(clipPath);
+    const fontStyle = buildFontFaceDefsStyle();
+    if (fontStyle) defs.appendChild(fontStyle);
     stage.appendChild(defs);
+
+    // everything below is nested in levelGroup so the optional "level view" rotation
+    // (shape + clip mask + image layers + guide) moves together as one rigid unit
+    const levelGroup = document.createElementNS(NS, "g");
+    levelGroup.id = "levelGroup";
+    if (levelView && bg.levelTransform) levelGroup.setAttribute("transform", bg.levelTransform.str);
+    stage.appendChild(levelGroup);
 
     const bgGroup = document.createElementNS(NS, "g");
     bgGroup.id = "bgLayer";
     bg.bgClones.forEach((c) => bgGroup.appendChild(c.cloneNode(true)));
-    stage.appendChild(bgGroup);
+    levelGroup.appendChild(bgGroup);
 
-    // layers[0] is topmost; render bottom-to-top so later elements draw on top
-    for (let i = layers.length - 1; i >= 0; i--){
-      const layer = layers[i];
-      const clipG = document.createElementNS(NS, "g");
-      clipG.setAttribute("clip-path", "url(#userClip)");
-      const moveG = document.createElementNS(NS, "g");
-      moveG.setAttribute("data-layer-id", layer.id);
-      const imageEl = document.createElementNS(NS, "image");
-      imageEl.setAttributeNS(XLINK, "href", layer.dataURL);
-      imageEl.setAttribute("href", layer.dataURL);
-      imageEl.setAttribute("x", -layer.naturalW/2);
-      imageEl.setAttribute("y", -layer.naturalH/2);
-      imageEl.setAttribute("width", layer.naturalW);
-      imageEl.setAttribute("height", layer.naturalH);
-      imageEl.setAttribute("preserveAspectRatio", "none");
-      imageEl.style.cursor = "pointer";
-      imageEl.addEventListener("pointerdown", () => {
-        if (layer.id !== activeLayerId) selectLayer(layer.id);
-      });
-      moveG.appendChild(imageEl);
-      clipG.appendChild(moveG);
-      stage.appendChild(clipG);
-    }
+    const clipG = document.createElementNS(NS, "g");
+    clipG.setAttribute("clip-path", "url(#userClip)");
+    layers.forEach((layer) => {
+      const layerG = document.createElementNS(NS, "g");
+      layerG.id = "layerGroup-" + layer.id;
+      layerG.setAttribute("transform", transformString(layer.xform));
+      layerG.appendChild(buildLayerVisual(layer));
+      clipG.appendChild(layerG);
+    });
+    levelGroup.appendChild(clipG);
 
-    const activeLayer = getActiveLayer();
-    if (activeLayer){
+    const selected = getSelectedLayer();
+    if (selected){
       const guideG = document.createElementNS(NS, "g");
       guideG.id = "guideGroup";
+      guideG.setAttribute("transform", transformString(selected.xform));
       const guideRect = document.createElementNS(NS, "rect");
       guideRect.id = "guideRect";
-      guideRect.setAttribute("x", -activeLayer.naturalW/2);
-      guideRect.setAttribute("y", -activeLayer.naturalH/2);
-      guideRect.setAttribute("width", activeLayer.naturalW);
-      guideRect.setAttribute("height", activeLayer.naturalH);
+      guideRect.setAttribute("x", -selected.naturalW/2);
+      guideRect.setAttribute("y", -selected.naturalH/2);
+      guideRect.setAttribute("width", selected.naturalW);
+      guideRect.setAttribute("height", selected.naturalH);
       guideRect.setAttribute("fill", "#ffffff");
       guideRect.setAttribute("fill-opacity", "0.001");
       guideRect.setAttribute("stroke", "#3b82f6");
@@ -691,25 +1227,29 @@
       guideRect.style.cursor = "grab";
       guideRect.style.strokeOpacity = showGuide ? "1" : "0";
       guideG.appendChild(guideRect);
-      stage.appendChild(guideG);
+      levelGroup.appendChild(guideG);
     }
 
-    renderAllTransforms();
+    updateHandles();
     attachStageInteractions();
   }
 
-  function renderAllTransforms(){
-    layers.forEach((l) => {
-      const g = stage.querySelector('[data-layer-id="' + l.id + '"]');
-      if (g) g.setAttribute("transform", transformString(l.xform));
-    });
-    const activeLayer = getActiveLayer();
+  function updateSelectedLayerTransform(){
+    const selected = getSelectedLayer();
+    if (!selected) return;
+    const t = transformString(selected.xform);
+    const lg = document.getElementById("layerGroup-" + selected.id);
     const gg = document.getElementById("guideGroup");
-    if (gg && activeLayer) gg.setAttribute("transform", transformString(activeLayer.xform));
+    if (lg) lg.setAttribute("transform", t);
+    if (gg) gg.setAttribute("transform", t);
     updateHandles();
   }
 
   // ---- coordinate conversion ----
+  // all layer/background geometry (xform.cx/cy, clip shapes, etc.) lives in the
+  // background SVG's own, un-rotated coordinate space. When "level view" is on, that
+  // space is displayed through the extra levelGroup transform (see buildStage), so
+  // points coming from the mouse need to be converted back into that local space here.
   function stagePointFromEvent(evt){
     const pt = stage.createSVGPoint();
     pt.x = evt.clientX;
@@ -718,16 +1258,17 @@
     if (!ctm) return { x:0, y:0 };
     const inv = ctm.inverse();
     const p = pt.matrixTransform(inv);
+    if (levelView && bg && bg.levelTransform) return applyMatrix(bg.levelTransform.matrixInv, p);
     return { x:p.x, y:p.y };
   }
 
-  function localToStage(lx, ly, xf){
-    const rad = xf.rot * Math.PI/180;
-    const sx = lx * xf.scale;
-    const sy = ly * xf.scale;
+  function localToStage(xform, lx, ly){
+    const rad = xform.rot * Math.PI/180;
+    const sx = lx * xform.scale;
+    const sy = ly * xform.scale;
     const rx = sx*Math.cos(rad) - sy*Math.sin(rad);
     const ry = sx*Math.sin(rad) + sy*Math.cos(rad);
-    return { x: xf.cx + rx, y: xf.cy + ry };
+    return { x: xform.cx + rx, y: xform.cy + ry };
   }
 
   function stagePointToContainerPx(x, y){
@@ -740,30 +1281,72 @@
     return { x: screenPt.x - rect.left, y: screenPt.y - rect.top };
   }
 
+  // ---- workspace pan/zoom (separate from per-layer transforms) ----
+  function applyViewTransform(){
+    stage.style.transformOrigin = "0 0";
+    stage.style.transform = `translate(${view.tx}px, ${view.ty}px) scale(${view.scale})`;
+    updateHandles();
+  }
+
+  function zoomViewAt(px, py, factor){
+    const newScale = Math.min(MAX_VIEW_SCALE, Math.max(MIN_VIEW_SCALE, view.scale * factor));
+    const actualFactor = newScale / view.scale;
+    view.tx = px - (px - view.tx) * actualFactor;
+    view.ty = py - (py - view.ty) * actualFactor;
+    view.scale = newScale;
+    applyViewTransform();
+  }
+
+  // ---- sets the starting zoom so a freshly-loaded shape renders at half the ----
+  // ---- monitor's height, rather than filling the whole checkered workboard. ----
+  function setInitialView(){
+    view.scale = 1; view.tx = 0; view.ty = 0;
+    if (!bg){ applyViewTransform(); return; }
+    const rect = stageContainer.getBoundingClientRect();
+    if (!rect.width || !rect.height){ applyViewTransform(); return; }
+    const fitScale = Math.min(rect.width / bg.w, rect.height / bg.h);
+    const renderedH = bg.h * fitScale;
+    if (renderedH <= 0){ applyViewTransform(); return; }
+    const targetH = window.innerHeight * 0.5;
+    zoomViewAt(rect.width / 2, rect.height / 2, targetH / renderedH);
+  }
+
   // ---- handles ----
   function updateHandles(){
-    const activeLayer = getActiveLayer();
-    if (!activeLayer){
+    const selected = getSelectedLayer();
+    if (!selected){
       handleLayer.style.display = "none";
       return;
     }
     handleLayer.style.display = "block";
-    const xf = activeLayer.xform;
-    const hw = activeLayer.naturalW/2, hh = activeLayer.naturalH/2;
+    const toDisplay = (p) => (levelView && bg && bg.levelTransform) ? applyMatrix(bg.levelTransform.matrix, p) : p;
+    const hw = selected.naturalW/2, hh = selected.naturalH/2;
     const corners = {
-      tl: localToStage(-hw, -hh, xf),
-      tr: localToStage(hw, -hh, xf),
-      br: localToStage(hw, hh, xf),
-      bl: localToStage(-hw, hh, xf)
+      tl: toDisplay(localToStage(selected.xform, -hw, -hh)),
+      tr: toDisplay(localToStage(selected.xform, hw, -hh)),
+      br: toDisplay(localToStage(selected.xform, hw, hh)),
+      bl: toDisplay(localToStage(selected.xform, -hw, hh))
     };
-    const rotLocalY = -hh - Math.max(activeLayer.naturalW, activeLayer.naturalH) * 0.14 - 10;
-    const rotStage = localToStage(0, rotLocalY, xf);
+    const rotLocalY = -hh - Math.max(selected.naturalW, selected.naturalH) * 0.14 - 10;
+    const rotStage = toDisplay(localToStage(selected.xform, 0, rotLocalY));
 
     placeHandle("handle-tl", corners.tl);
     placeHandle("handle-tr", corners.tr);
     placeHandle("handle-br", corners.br);
     placeHandle("handle-bl", corners.bl);
     placeHandle("handle-rotate", rotStage);
+
+    // stretch/smoosh (non-uniform resize) handles — shapes only
+    const canStretch = selected.type === "shape";
+    ["handle-top","handle-bottom","handle-left","handle-right"].forEach((id) => {
+      document.getElementById(id).style.display = canStretch ? "block" : "none";
+    });
+    if (canStretch){
+      placeHandle("handle-top", toDisplay(localToStage(selected.xform, 0, -hh)));
+      placeHandle("handle-bottom", toDisplay(localToStage(selected.xform, 0, hh)));
+      placeHandle("handle-left", toDisplay(localToStage(selected.xform, -hw, 0)));
+      placeHandle("handle-right", toDisplay(localToStage(selected.xform, hw, 0)));
+    }
   }
 
   function placeHandle(id, stagePt){
@@ -779,17 +1362,18 @@
     const guideRect = document.getElementById("guideRect");
     if (!guideRect) return;
     guideRect.addEventListener("pointerdown", (e) => {
-      const layer = getActiveLayer();
-      if (!layer) return;
+      if (e.button !== 0) return;
+      const selected = getSelectedLayer();
+      if (!selected) return;
       e.preventDefault();
       guideRect.style.cursor = "grabbing";
       const start = stagePointFromEvent(e);
-      const startCx = layer.xform.cx, startCy = layer.xform.cy;
+      const startCx = selected.xform.cx, startCy = selected.xform.cy;
       function move(ev){
         const cur = stagePointFromEvent(ev);
-        layer.xform.cx = startCx + (cur.x - start.x);
-        layer.xform.cy = startCy + (cur.y - start.y);
-        renderAllTransforms();
+        selected.xform.cx = startCx + (cur.x - start.x);
+        selected.xform.cy = startCy + (cur.y - start.y);
+        updateSelectedLayerTransform();
       }
       function up(){
         guideRect.style.cursor = "grab";
@@ -805,21 +1389,22 @@
   function attachCornerHandle(id){
     const el = document.getElementById(id);
     el.addEventListener("pointerdown", (e) => {
-      const layer = getActiveLayer();
-      if (!layer) return;
+      if (e.button !== 0) return;
+      const selected = getSelectedLayer();
+      if (!selected) return;
       e.preventDefault();
       e.stopPropagation();
       const start = stagePointFromEvent(e);
-      const dx0 = start.x - layer.xform.cx, dy0 = start.y - layer.xform.cy;
+      const dx0 = start.x - selected.xform.cx, dy0 = start.y - selected.xform.cy;
       const startDist = Math.hypot(dx0, dy0) || 0.0001;
-      const startScale = layer.xform.scale;
+      const startScale = selected.xform.scale;
       function move(ev){
         const cur = stagePointFromEvent(ev);
-        const dist = Math.hypot(cur.x - layer.xform.cx, cur.y - layer.xform.cy);
+        const dist = Math.hypot(cur.x - selected.xform.cx, cur.y - selected.xform.cy);
         let newScale = startScale * (dist / startDist);
         newScale = Math.max(0.02, Math.min(newScale, 60));
-        layer.xform.scale = newScale;
-        renderAllTransforms();
+        selected.xform.scale = newScale;
+        updateSelectedLayerTransform();
         syncZoomSlider();
       }
       function up(){
@@ -832,22 +1417,67 @@
   }
   ["handle-tl","handle-tr","handle-br","handle-bl"].forEach(attachCornerHandle);
 
+  // ---- dragging: stretch/smoosh a single side (non-uniform resize, shape layers only) ----
+  // moving one edge grows/shrinks that dimension by the pointer's movement along that edge's
+  // local axis, while the opposite edge stays put — the layer's center shifts by half the
+  // change to keep the fixed edge fixed, matching typical "resize handle" behavior.
+  const MIN_SHAPE_SIZE = 4;
+  function attachEdgeHandle(id, dim, sign){
+    const el = document.getElementById(id);
+    el.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      const selected = getSelectedLayer();
+      if (!selected || selected.type !== "shape") return;
+      e.preventDefault();
+      e.stopPropagation();
+      const start = stagePointFromEvent(e);
+      const rad = selected.xform.rot * Math.PI / 180;
+      const axis = dim === "w" ? { x: Math.cos(rad), y: Math.sin(rad) } : { x: -Math.sin(rad), y: Math.cos(rad) };
+      const startW = selected.naturalW, startH = selected.naturalH;
+      const startCx = selected.xform.cx, startCy = selected.xform.cy;
+      const scale = selected.xform.scale;
+      function move(ev){
+        const cur = stagePointFromEvent(ev);
+        const dProj = ((cur.x - start.x) * axis.x + (cur.y - start.y) * axis.y) / scale;
+        const startSize = dim === "w" ? startW : startH;
+        const newSize = Math.max(MIN_SHAPE_SIZE, startSize + sign * dProj);
+        const appliedDelta = sign * (newSize - startSize);
+        if (dim === "w") selected.naturalW = newSize; else selected.naturalH = newSize;
+        const centerShift = appliedDelta / 2;
+        selected.xform.cx = startCx + centerShift * scale * axis.x;
+        selected.xform.cy = startCy + centerShift * scale * axis.y;
+        buildStage();
+      }
+      function up(){
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+      }
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+    });
+  }
+  attachEdgeHandle("handle-left", "w", -1);
+  attachEdgeHandle("handle-right", "w", 1);
+  attachEdgeHandle("handle-top", "h", -1);
+  attachEdgeHandle("handle-bottom", "h", 1);
+
   // ---- dragging: rotate ----
   (function attachRotateHandle(){
     const el = document.getElementById("handle-rotate");
     el.addEventListener("pointerdown", (e) => {
-      const layer = getActiveLayer();
-      if (!layer) return;
+      if (e.button !== 0) return;
+      const selected = getSelectedLayer();
+      if (!selected) return;
       e.preventDefault();
       e.stopPropagation();
       const start = stagePointFromEvent(e);
-      const startAngle = Math.atan2(start.y - layer.xform.cy, start.x - layer.xform.cx) * 180/Math.PI;
-      const startRot = layer.xform.rot;
+      const startAngle = Math.atan2(start.y - selected.xform.cy, start.x - selected.xform.cx) * 180/Math.PI;
+      const startRot = selected.xform.rot;
       function move(ev){
         const cur = stagePointFromEvent(ev);
-        const curAngle = Math.atan2(cur.y - layer.xform.cy, cur.x - layer.xform.cx) * 180/Math.PI;
-        layer.xform.rot = startRot + (curAngle - startAngle);
-        renderAllTransforms();
+        const curAngle = Math.atan2(cur.y - selected.xform.cy, cur.x - selected.xform.cx) * 180/Math.PI;
+        selected.xform.rot = startRot + (curAngle - startAngle);
+        updateSelectedLayerTransform();
         syncRotationSlider();
       }
       function up(){
@@ -859,35 +1489,79 @@
     });
   })();
 
-  // ---- layers list (select + drag to reorder) ----
-  function renderLayersList(){
-    layersList.innerHTML = "";
-    if (!layers.length){
-      const empty = document.createElement("div");
-      empty.className = "layers-empty";
-      empty.textContent = "No image layers yet — add one above.";
-      layersList.appendChild(empty);
+  // ---- slider / control sync ----
+  function syncZoomSlider(){
+    const selected = getSelectedLayer();
+    if (!selected){
+      zoomRange.value = 100;
+      zoomLabel.textContent = "100%";
       return;
     }
-    layers.forEach((layer) => {
-      const item = document.createElement("div");
-      item.className = "layer-item" + (layer.id === activeLayerId ? " active" : "");
-      item.dataset.id = layer.id;
+    const pct = Math.round((selected.xform.scale / (selected.fitScale || 1)) * 100);
+    const clamped = Math.min(500, Math.max(20, pct));
+    zoomRange.value = clamped;
+    zoomLabel.textContent = pct + "%";
+  }
+  function syncRotationSlider(){
+    const selected = getSelectedLayer();
+    if (!selected){
+      rotRange.value = 0;
+      rotLabel.textContent = "0°";
+      return;
+    }
+    let r = ((selected.xform.rot % 360) + 360) % 360;
+    if (r > 180) r -= 360;
+    rotRange.value = Math.round(r);
+    rotLabel.textContent = Math.round(selected.xform.rot % 360) + "°";
+  }
+
+  function updateControlsEnabled(){
+    const hasSelection = !!getSelectedLayer();
+    const hasLayers = layers.length > 0;
+    fitBtn.disabled = !hasSelection;
+    removeImgBtn.disabled = !hasSelection;
+    zoomRange.disabled = !hasSelection;
+    rotRange.disabled = !hasSelection;
+    rotLeftBtn.disabled = !hasSelection;
+    rotRightBtn.disabled = !hasSelection;
+    opacityRange.disabled = !hasSelection;
+    downloadZipBtn.disabled = !hasLayers;
+  }
+
+  // ---- layer list UI ----
+  function renderLayerList(){
+    layerListEl.innerHTML = "";
+    if (!layers.length){
+      const empty = document.createElement("div");
+      empty.className = "layer-empty";
+      empty.textContent = "No layers yet — add an image above.";
+      layerListEl.appendChild(empty);
+      return;
+    }
+    // top of list = front-most layer (rendered last / on top)
+    const topToBottom = layers.slice().reverse();
+    topToBottom.forEach((layer) => {
+      const li = document.createElement("li");
+      li.className = "layer-item" + (layer.id === selectedLayerId ? " active" : "");
+      li.draggable = true;
+      li.dataset.id = String(layer.id);
 
       const handle = document.createElement("span");
-      handle.className = "drag-handle";
-      handle.textContent = "⋮⋮";
-      handle.title = "Drag to reorder";
-
-      const thumb = document.createElement("img");
-      thumb.className = "layer-thumb";
-      thumb.src = layer.dataURL;
-      thumb.alt = "";
+      handle.className = "layer-drag-handle";
+      handle.textContent = "⠿";
+      li.appendChild(handle);
 
       const name = document.createElement("span");
       name.className = "layer-name";
-      name.textContent = layer.name;
-      name.title = layer.name;
+      if (layer.type === "text"){
+        name.textContent = "🄰 " + ((layer.text || "Text").split("\n")[0].slice(0, 24) || "Text");
+      } else if (layer.type === "shape"){
+        const kindLabel = layer.shapeKind.charAt(0).toUpperCase() + layer.shapeKind.slice(1);
+        name.textContent = "🔷 " + kindLabel;
+      } else {
+        name.textContent = layer.name;
+      }
+      li.appendChild(name);
 
       const removeBtn = document.createElement("button");
       removeBtn.type = "button";
@@ -898,258 +1572,424 @@
         e.stopPropagation();
         removeLayer(layer.id);
       });
+      li.appendChild(removeBtn);
 
-      item.appendChild(handle);
-      item.appendChild(thumb);
-      item.appendChild(name);
-      item.appendChild(removeBtn);
+      li.addEventListener("click", () => selectLayer(layer.id));
 
-      item.addEventListener("click", () => selectLayer(layer.id));
-      attachLayerDrag(item, handle, layer.id);
-
-      layersList.appendChild(item);
-    });
-  }
-
-  function attachLayerDrag(itemEl, handleEl, id){
-    handleEl.addEventListener("pointerdown", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const others = Array.from(layersList.querySelectorAll(".layer-item"))
-        .filter((it) => it.dataset.id !== id)
-        .map((it) => ({ id: it.dataset.id, el: it, rect: it.getBoundingClientRect() }));
-      const startY = e.clientY;
-      let lastClientY = startY;
-      itemEl.classList.add("dragging");
-      try{ handleEl.setPointerCapture(e.pointerId); }catch(err){ /* ignore */ }
-
-      function clearIndicators(){
-        others.forEach((o) => o.el.classList.remove("drop-indicator", "drop-indicator-after"));
-      }
-      function computeInsertBeforeId(clientY){
-        for (const o of others){
-          const mid = o.rect.top + o.rect.height/2;
-          if (clientY < mid) return o.id;
-        }
-        return null;
-      }
-      function move(ev){
-        lastClientY = ev.clientY;
-        itemEl.style.transform = `translateY(${ev.clientY - startY}px)`;
-        clearIndicators();
-        const beforeId = computeInsertBeforeId(ev.clientY);
-        if (beforeId){
-          const t = others.find((o) => o.id === beforeId);
-          if (t) t.el.classList.add("drop-indicator");
-        } else if (others.length){
-          others[others.length - 1].el.classList.add("drop-indicator-after");
-        }
-      }
-      function up(ev){
-        try{ handleEl.releasePointerCapture(ev.pointerId); }catch(err){ /* ignore */ }
-        window.removeEventListener("pointermove", move);
-        window.removeEventListener("pointerup", up);
-        itemEl.classList.remove("dragging");
-        itemEl.style.transform = "";
-        clearIndicators();
-
-        const beforeId = computeInsertBeforeId(lastClientY);
-        const curIdx = layers.findIndex((l) => l.id === id);
-        if (curIdx === -1) return;
-        const [moved] = layers.splice(curIdx, 1);
-        if (beforeId){
-          const insertIdx = layers.findIndex((l) => l.id === beforeId);
-          layers.splice(insertIdx === -1 ? layers.length : insertIdx, 0, moved);
-        } else {
-          layers.push(moved);
-        }
-        renderLayersList();
+      li.addEventListener("dragstart", (e) => {
+        dragSrcLi = li;
+        li.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+        try{ e.dataTransfer.setData("text/plain", li.dataset.id); }catch(err){ /* ignore */ }
+      });
+      li.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        if (!dragSrcLi || dragSrcLi === li) return;
+        const rect = li.getBoundingClientRect();
+        const after = (e.clientY - rect.top) > rect.height/2;
+        li.parentNode.insertBefore(dragSrcLi, after ? li.nextSibling : li);
+      });
+      li.addEventListener("drop", (e) => {
+        e.preventDefault();
+      });
+      li.addEventListener("dragend", () => {
+        li.classList.remove("dragging");
+        dragSrcLi = null;
+        const idsTopToBottom = Array.from(layerListEl.children)
+          .filter((el) => el.dataset && el.dataset.id)
+          .map((el) => el.dataset.id);
+        const idsBottomToTop = idsTopToBottom.slice().reverse();
+        layers = idsBottomToTop
+          .map((id) => layers.find((l) => String(l.id) === id))
+          .filter(Boolean);
         buildStage();
-      }
-      window.addEventListener("pointermove", move);
-      window.addEventListener("pointerup", up);
+      });
+
+      layerListEl.appendChild(li);
     });
   }
 
   function selectLayer(id){
-    if (activeLayerId === id) return;
-    activeLayerId = id;
+    selectedLayerId = id;
+    renderLayerList();
     buildStage();
-    renderLayersList();
     syncZoomSlider();
     syncRotationSlider();
-  }
-
-  function addLayer(spec){
-    const layer = {
-      id: genLayerId(),
-      naturalW: spec.naturalW,
-      naturalH: spec.naturalH,
-      dataURL: spec.dataURL,
-      name: spec.name,
-      xform: { cx:0, cy:0, scale:1, rot:0 },
-      fitScale: 1
-    };
-    if (bg) fitLayerTransform(layer);
-    layers.unshift(layer);
-    activeLayerId = layer.id;
-    buildStage();
-    renderLayersList();
-    syncZoomSlider();
-    syncRotationSlider();
-    setControlsEnabled(true);
+    updateControlsEnabled();
+    syncTextControls();
   }
 
   function removeLayer(id){
-    const idx = layers.findIndex((l) => l.id === id);
-    if (idx === -1) return;
-    layers.splice(idx, 1);
-    if (activeLayerId === id){
-      activeLayerId = layers.length ? layers[Math.min(idx, layers.length - 1)].id : null;
+    layers = layers.filter((l) => l.id !== id);
+    if (selectedLayerId === id){
+      selectedLayerId = layers.length ? layers[layers.length - 1].id : null;
     }
+    renderLayerList();
     buildStage();
-    renderLayersList();
     syncZoomSlider();
     syncRotationSlider();
-    setControlsEnabled(layers.length > 0);
+    updateControlsEnabled();
+    syncTextControls();
   }
 
-  // ---- slider / control sync ----
-  function syncZoomSlider(){
-    const layer = getActiveLayer();
-    if (!layer){ zoomRange.value = 100; zoomLabel.textContent = "100%"; return; }
-    const pct = Math.round((layer.xform.scale / layer.fitScale) * 100);
-    const clamped = Math.min(500, Math.max(20, pct));
-    zoomRange.value = clamped;
-    zoomLabel.textContent = pct + "%";
-  }
-  function syncRotationSlider(){
-    const layer = getActiveLayer();
-    if (!layer){ rotRange.value = 0; rotLabel.textContent = "0°"; return; }
-    let r = ((layer.xform.rot % 360) + 360) % 360;
-    if (r > 180) r -= 360;
-    rotRange.value = Math.round(r);
-    rotLabel.textContent = Math.round(layer.xform.rot % 360) + "°";
+  // ---- per-layer-type controls: populate the panel from the selected layer, or hide it ----
+  function syncOpacityControl(){
+    const selected = getSelectedLayer();
+    const val = selected ? (selected.opacity == null ? 100 : selected.opacity) : 100;
+    opacityRange.value = val;
+    opacityLabel.textContent = Math.round(val) + "%";
   }
 
-  function setControlsEnabled(enabled){
-    fitBtn.disabled = !enabled;
-    removeImgBtn.disabled = !enabled;
-    zoomRange.disabled = !enabled;
-    rotRange.disabled = !enabled;
-    rotLeftBtn.disabled = !enabled;
-    rotRightBtn.disabled = !enabled;
-    downloadZipBtn.disabled = !enabled;
+  function syncColorControls(){
+    const selected = getSelectedLayer();
+    const colorable = isColorableLayer(selected);
+    colorFieldsGroup.style.display = colorable ? "" : "none";
+    if (!colorable) return;
+    const rgb = { r: 1 - selected.color.c/100, g: 1 - selected.color.m/100, b: 1 - selected.color.y/100 };
+    const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+    positionWheelDot(hsv.h, hsv.s);
+    cmykK.value = selected.color.k;
+    cmykKVal.textContent = selected.color.k + "%";
+    updateColorReadout(selected);
   }
 
-  // ---- events: image upload (each file becomes a new layer) ----
-  imageInput.addEventListener("change", (e) => {
-    const files = Array.from(e.target.files || []);
+  function syncTextControls(){
+    const selected = getSelectedLayer();
+    const isText = !!selected && selected.type === "text";
+    textFieldsGroup.style.display = isText ? "" : "none";
+    if (isText){
+      if (document.activeElement !== textContentInput) textContentInput.value = selected.text;
+      fontSelect.value = selected.fontFamily;
+    }
+
+    const isShape = !!selected && selected.type === "shape";
+    shapeFieldsGroup.style.display = isShape ? "" : "none";
+    if (isShape){
+      shapeKindSelect.value = selected.shapeKind;
+      const isLine = selected.shapeKind === "line";
+      shapeFilledRow.style.display = isLine ? "none" : "";
+      shapeFilledCheckbox.checked = selected.filled;
+      const showStrokeWidth = isLine || !selected.filled;
+      shapeStrokeWidthField.style.display = showStrokeWidth ? "" : "none";
+      shapeStrokeWidthRange.value = selected.strokeWidth;
+      shapeStrokeWidthLabel.textContent = selected.strokeWidth;
+    }
+
+    syncColorControls();
+    syncOpacityControl();
+  }
+
+  function addTextLayer(){
+    const cx = bg ? bg.clipBBoxRect.x + bg.clipBBoxRect.w/2 : 0;
+    const cy = bg ? bg.clipBBoxRect.y + bg.clipBBoxRect.h/2 : 0;
+    const layer = {
+      id: ++layerIdCounter,
+      type: "text",
+      text: "Your Text",
+      fontFamily: BUILTIN_FONTS[0].value,
+      color: { c:0, m:0, y:0, k:100 },
+      fillColor: cmykToHex(0, 0, 0, 100),
+      opacity: 100,
+      xform: { cx, cy, scale:1, rot:0 },
+      fitScale: 1
+    };
+    measureTextLayer(layer);
+    layers.push(layer);
+    selectedLayerId = layer.id;
+    renderLayerList();
+    buildStage();
+    syncZoomSlider();
+    syncRotationSlider();
+    updateControlsEnabled();
+    syncTextControls();
+    textContentInput.focus();
+    textContentInput.select();
+  }
+
+  function addShapeLayer(kind){
+    const cx = bg ? bg.clipBBoxRect.x + bg.clipBBoxRect.w/2 : 0;
+    const cy = bg ? bg.clipBBoxRect.y + bg.clipBBoxRect.h/2 : 0;
+    const dims = SHAPE_DEFAULTS[kind] || SHAPE_DEFAULTS.rectangle;
+    const layer = {
+      id: ++layerIdCounter,
+      type: "shape",
+      shapeKind: kind,
+      filled: true,
+      strokeWidth: 6,
+      color: { c:0, m:0, y:0, k:100 },
+      fillColor: cmykToHex(0, 0, 0, 100),
+      opacity: 100,
+      naturalW: dims.w,
+      naturalH: dims.h,
+      xform: { cx, cy, scale:1, rot:0 },
+      fitScale: 1
+    };
+    layers.push(layer);
+    selectedLayerId = layer.id;
+    renderLayerList();
+    buildStage();
+    syncZoomSlider();
+    syncRotationSlider();
+    updateControlsEnabled();
+    syncTextControls();
+  }
+
+  // ---- events: image upload (adds one layer per selected file) ----
+  function addImageFiles(fileList){
+    const files = Array.from(fileList || []).filter((f) => f.type && f.type.startsWith("image/"));
     if (!files.length) return;
-    loadFilesSequentially(files).then(() => { imageInput.value = ""; });
-  });
-
-  // ---- events: drag & drop images onto the dropzone ----
-  let dragDepth = 0;
-  dropzone.addEventListener("dragenter", (e) => {
-    e.preventDefault();
-    dragDepth += 1;
-    dropzone.classList.add("dragover");
-  });
-  dropzone.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "copy";
-  });
-  dropzone.addEventListener("dragleave", (e) => {
-    e.preventDefault();
-    dragDepth = Math.max(0, dragDepth - 1);
-    if (dragDepth === 0) dropzone.classList.remove("dragover");
-  });
-  dropzone.addEventListener("drop", (e) => {
-    e.preventDefault();
-    dragDepth = 0;
-    dropzone.classList.remove("dragover");
-    const files = Array.from(e.dataTransfer.files || []).filter((f) => f.type.startsWith("image/"));
-    if (!files.length) return;
-    loadFilesSequentially(files);
-  });
-
-  function loadFilesSequentially(files){
-    return files.reduce((p, file) => p.then(() => loadOneFile(file)), Promise.resolve());
-  }
-  function loadOneFile(file){
-    return new Promise((resolve) => {
+    files.forEach((file) => {
       const reader = new FileReader();
       reader.onload = (ev) => {
         const dataURL = ev.target.result;
         const tmp = new Image();
         tmp.onload = () => {
-          addLayer({
+          const layer = {
+            id: ++layerIdCounter,
+            type: "image",
+            name: file.name || ("Layer " + layerIdCounter),
             naturalW: tmp.naturalWidth || 300,
             naturalH: tmp.naturalHeight || 300,
             dataURL,
-            name: file.name || ("Layer " + (layers.length + 1))
-          });
-          resolve();
+            opacity: 100,
+            xform: { cx:0, cy:0, scale:1, rot:0 },
+            fitScale: 1
+          };
+          layers.push(layer);
+          if (bg) fitTransform(layer);
+          selectedLayerId = layer.id;
+          renderLayerList();
+          buildStage();
+          syncZoomSlider();
+          syncRotationSlider();
+          updateControlsEnabled();
+          syncTextControls();
         };
-        tmp.onerror = () => { alert("Couldn't read " + (file.name || "an image") + "."); resolve(); };
+        tmp.onerror = () => alert("Couldn't read " + (file.name || "that image") + ".");
         tmp.src = dataURL;
       };
-      reader.onerror = () => { alert("Couldn't read " + (file.name || "an image") + "."); resolve(); };
+      reader.onerror = () => alert("Couldn't read " + (file.name || "that file") + ".");
       reader.readAsDataURL(file);
     });
   }
+
+  imageInput.addEventListener("change", (e) => {
+    addImageFiles(e.target.files);
+    imageInput.value = "";
+  });
+
+  dropzone.addEventListener("click", () => imageInput.click());
+  dropzone.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " "){
+      e.preventDefault();
+      imageInput.click();
+    }
+  });
+  ["dragenter","dragover"].forEach((evt) => {
+    dropzone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.add("dragover");
+    });
+  });
+  ["dragleave","dragend"].forEach((evt) => {
+    dropzone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.remove("dragover");
+    });
+  });
+  dropzone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropzone.classList.remove("dragover");
+    addImageFiles(e.dataTransfer && e.dataTransfer.files);
+  });
+  // prevent the browser from navigating away if a file is dropped outside the dropzone
+  ["dragover","drop"].forEach((evt) => {
+    window.addEventListener(evt, (e) => {
+      if (e.target !== dropzone && !dropzone.contains(e.target)) e.preventDefault();
+    });
+  });
+
+  // ---- events: text layers ----
+  addTextBtn.addEventListener("click", addTextLayer);
+
+  textContentInput.addEventListener("input", () => {
+    const selected = getSelectedLayer();
+    if (!selected || selected.type !== "text") return;
+    selected.text = textContentInput.value;
+    measureTextLayer(selected);
+    buildStage();
+    renderLayerList();
+  });
+
+  fontSelect.addEventListener("change", () => {
+    if (fontSelect.value === "__upload__"){
+      syncTextControls();
+      fontFileInput.click();
+      return;
+    }
+    const selected = getSelectedLayer();
+    if (!selected || selected.type !== "text") return;
+    selected.fontFamily = fontSelect.value;
+    measureTextLayer(selected);
+    buildStage();
+  });
+
+  fontFileInput.addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    fontFileInput.value = "";
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataURL = ev.target.result;
+      const baseName = (file.name || "CustomFont").replace(/\.[^.]+$/, "");
+      const familyName = "UserFont" + (++customFontCounter) + "-" + baseName.replace(/[^a-z0-9]+/gi, "").slice(0, 24);
+      registerCustomFont(familyName, dataURL);
+      addCustomFontOption(familyName, baseName + " (custom)");
+      loadFontAndThen(familyName, () => {
+        const selected = getSelectedLayer();
+        if (selected && selected.type === "text"){
+          selected.fontFamily = familyName;
+          fontSelect.value = familyName;
+          measureTextLayer(selected);
+          buildStage();
+        }
+      });
+    };
+    reader.onerror = () => alert("Couldn't read that font file.");
+    reader.readAsDataURL(file);
+  });
+
+  colorWheel.addEventListener("pointerdown", (e) => {
+    const selected = getSelectedLayer();
+    if (!isColorableLayer(selected)) return;
+    e.preventDefault();
+    colorWheel.setPointerCapture(e.pointerId);
+    const apply = (ev) => {
+      const { hue, sat } = wheelPointFromEvent(ev);
+      setColorFromWheel(hue, sat);
+    };
+    apply(e);
+    function move(ev){ if (ev.pointerId === e.pointerId) apply(ev); }
+    function up(ev){
+      if (ev.pointerId !== e.pointerId) return;
+      colorWheel.removeEventListener("pointermove", move);
+      colorWheel.removeEventListener("pointerup", up);
+      colorWheel.removeEventListener("pointercancel", up);
+    }
+    colorWheel.addEventListener("pointermove", move);
+    colorWheel.addEventListener("pointerup", up);
+    colorWheel.addEventListener("pointercancel", up);
+  });
+
+  cmykK.addEventListener("input", () => {
+    const selected = getSelectedLayer();
+    if (!isColorableLayer(selected)) return;
+    const k = parseFloat(cmykK.value);
+    selected.color.k = k;
+    selected.fillColor = cmykToHex(selected.color.c, selected.color.m, selected.color.y, k);
+    cmykKVal.textContent = k + "%";
+    updateColorReadout(selected);
+    buildStage();
+  });
+
+  // ---- events: opacity (shared across image / text / shape layers) ----
+  opacityRange.addEventListener("input", () => {
+    const selected = getSelectedLayer();
+    if (!selected) return;
+    selected.opacity = parseFloat(opacityRange.value);
+    opacityLabel.textContent = Math.round(selected.opacity) + "%";
+    buildStage();
+  });
+
+  // ---- events: shape layers ----
+  addShapeButtons.forEach((btn) => {
+    btn.addEventListener("click", () => addShapeLayer(btn.dataset.shapeKind));
+  });
+
+  shapeKindSelect.addEventListener("change", () => {
+    const selected = getSelectedLayer();
+    if (!selected || selected.type !== "shape") return;
+    selected.shapeKind = shapeKindSelect.value;
+    buildStage();
+    syncTextControls();
+  });
+
+  shapeFilledCheckbox.addEventListener("change", () => {
+    const selected = getSelectedLayer();
+    if (!selected || selected.type !== "shape") return;
+    selected.filled = shapeFilledCheckbox.checked;
+    buildStage();
+    syncTextControls();
+  });
+
+  shapeStrokeWidthRange.addEventListener("input", () => {
+    const selected = getSelectedLayer();
+    if (!selected || selected.type !== "shape") return;
+    selected.strokeWidth = parseFloat(shapeStrokeWidthRange.value);
+    shapeStrokeWidthLabel.textContent = shapeStrokeWidthRange.value;
+    buildStage();
+  });
 
   // ---- events: shape select (built-in shapes) ----
   shapeSelect.addEventListener("change", () => {
     const shape = BUILTIN_SHAPES[shapeSelect.value];
     if (!shape) return;
+    currentShapeLabel = shape.label;
     parseAndLoadBackground(shape.svg);
+  });
+
+  levelViewCheckbox.addEventListener("change", () => {
+    levelView = levelViewCheckbox.checked;
+    buildStage();
   });
 
   // ---- events: controls ----
   fitBtn.addEventListener("click", () => {
-    const layer = getActiveLayer();
-    if (!layer || !bg) return;
-    fitLayerTransform(layer);
-    renderAllTransforms();
+    const selected = getSelectedLayer();
+    if (!selected || !bg) return;
+    fitTransform(selected);
+    updateSelectedLayerTransform();
     syncZoomSlider();
     syncRotationSlider();
   });
 
   removeImgBtn.addEventListener("click", () => {
-    if (!activeLayerId) return;
-    removeLayer(activeLayerId);
+    const selected = getSelectedLayer();
+    if (!selected) return;
+    removeLayer(selected.id);
   });
 
   zoomRange.addEventListener("input", () => {
-    const layer = getActiveLayer();
-    if (!layer) return;
-    layer.xform.scale = layer.fitScale * (parseFloat(zoomRange.value) / 100);
+    const selected = getSelectedLayer();
+    if (!selected) return;
+    selected.xform.scale = (selected.fitScale || 1) * (parseFloat(zoomRange.value) / 100);
     zoomLabel.textContent = zoomRange.value + "%";
-    renderAllTransforms();
+    updateSelectedLayerTransform();
   });
 
   rotRange.addEventListener("input", () => {
-    const layer = getActiveLayer();
-    if (!layer) return;
-    layer.xform.rot = parseFloat(rotRange.value);
-    rotLabel.textContent = Math.round(layer.xform.rot) + "°";
-    renderAllTransforms();
+    const selected = getSelectedLayer();
+    if (!selected) return;
+    selected.xform.rot = parseFloat(rotRange.value);
+    rotLabel.textContent = Math.round(selected.xform.rot) + "°";
+    updateSelectedLayerTransform();
   });
 
   rotLeftBtn.addEventListener("click", () => {
-    const layer = getActiveLayer();
-    if (!layer) return;
-    layer.xform.rot -= 15;
-    renderAllTransforms();
+    const selected = getSelectedLayer();
+    if (!selected) return;
+    selected.xform.rot -= 15;
+    updateSelectedLayerTransform();
     syncRotationSlider();
   });
   rotRightBtn.addEventListener("click", () => {
-    const layer = getActiveLayer();
-    if (!layer) return;
-    layer.xform.rot += 15;
-    renderAllTransforms();
+    const selected = getSelectedLayer();
+    if (!selected) return;
+    selected.xform.rot += 15;
+    updateSelectedLayerTransform();
     syncRotationSlider();
   });
 
@@ -1160,107 +2000,109 @@
   });
 
   // ---- rotate without the slider: shift + scroll wheel over the stage ----
+  // ---- plain scroll wheel: zoom the workspace view, centered on the cursor ----
   stageContainer.addEventListener("wheel", (e) => {
-    const layer = getActiveLayer();
-    if (!layer) return;
-    if (!e.shiftKey){
-      // plain scroll still zooms, so scrolling the page doesn't get "stuck"
+    if (e.shiftKey){
+      const selected = getSelectedLayer();
+      if (!selected) return;
+      e.preventDefault();
+      const step = e.deltaY > 0 ? 5 : -5;
+      selected.xform.rot += step;
+      updateSelectedLayerTransform();
+      syncRotationSlider();
       return;
     }
     e.preventDefault();
-    const step = e.deltaY > 0 ? 5 : -5;
-    layer.xform.rot += step;
-    renderAllTransforms();
-    syncRotationSlider();
+    const rect = stageContainer.getBoundingClientRect();
+    const factor = e.deltaY < 0 ? 1.1 : 1/1.1;
+    zoomViewAt(e.clientX - rect.left, e.clientY - rect.top, factor);
   }, { passive:false });
+
+  // ---- pan the workspace view: hold the middle mouse button and drag ----
+  stageContainer.addEventListener("pointerdown", (e) => {
+    if (e.button !== 1) return;
+    e.preventDefault();
+    stageContainer.setPointerCapture(e.pointerId);
+    stageContainer.style.cursor = "grabbing";
+    let lastX = e.clientX, lastY = e.clientY;
+    function move(ev){
+      if (ev.pointerId !== e.pointerId) return;
+      view.tx += ev.clientX - lastX;
+      view.ty += ev.clientY - lastY;
+      lastX = ev.clientX; lastY = ev.clientY;
+      applyViewTransform();
+    }
+    function up(ev){
+      if (ev.pointerId !== e.pointerId) return;
+      stageContainer.style.cursor = "";
+      stageContainer.removeEventListener("pointermove", move);
+      stageContainer.removeEventListener("pointerup", up);
+      stageContainer.removeEventListener("pointercancel", up);
+    }
+    stageContainer.addEventListener("pointermove", move);
+    stageContainer.addEventListener("pointerup", up);
+    stageContainer.addEventListener("pointercancel", up);
+  });
+  stageContainer.addEventListener("mousedown", (e) => {
+    if (e.button === 1) e.preventDefault();
+  });
 
   // ---- rotate without the slider: [ and ] keys ----
   window.addEventListener("keydown", (e) => {
-    const layer = getActiveLayer();
-    if (!layer) return;
+    const selected = getSelectedLayer();
+    if (!selected) return;
     const tag = (document.activeElement && document.activeElement.tagName) || "";
     if (["INPUT","SELECT","TEXTAREA"].includes(tag)) return; // don't hijack typing/sliders
     if (e.key !== "[" && e.key !== "]") return;
     e.preventDefault();
     const step = e.shiftKey ? 15 : 1;
-    layer.xform.rot += (e.key === "]" ? step : -step);
-    renderAllTransforms();
+    selected.xform.rot += (e.key === "]" ? step : -step);
+    updateSelectedLayerTransform();
     syncRotationSlider();
   });
 
   window.addEventListener("resize", updateHandles);
   window.addEventListener("scroll", updateHandles, true);
 
-  // ---- export ----
+  // ---- shared export helpers ----
   function buildExportFilename(ext, suffix){
-    const now = new Date();
+    const d = new Date();
     const pad = (n) => String(n).padStart(2, "0");
-    const timestamp = now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate())
-      + "-" + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());
-    const shape = BUILTIN_SHAPES[shapeSelect.value];
-    const shapeName = (shape ? shape.label : shapeSelect.value)
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-    const parts = [timestamp, shapeName];
-    if (suffix) parts.push(suffix);
-    return parts.join("-") + "." + ext;
+    const timestamp = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+    const shapeSlug = (currentShapeLabel || "shape").replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "");
+    const suffixPart = suffix ? `-${suffix}` : "";
+    return `${timestamp}-${shapeSlug}${suffixPart}.${ext}`;
   }
 
-  // bounding box (in stage coordinates) that contains every layer at its current transform
-  function computeLayersBBox(){
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    layers.forEach((l) => {
-      const hw = l.naturalW/2, hh = l.naturalH/2;
-      [
-        localToStage(-hw, -hh, l.xform),
-        localToStage(hw, -hh, l.xform),
-        localToStage(hw, hh, l.xform),
-        localToStage(-hw, hh, l.xform)
-      ].forEach((c) => {
-        minX = Math.min(minX, c.x); maxX = Math.max(maxX, c.x);
-        minY = Math.min(minY, c.y); maxY = Math.max(maxY, c.y);
-      });
-    });
-    if (!isFinite(minX)) return null;
-    return { x:minX, y:minY, w:maxX-minX, h:maxY-minY };
+  function buildLayerVisual(layer){
+    let el;
+    if (layer.type === "text"){
+      el = createTextGroup(layer);
+    } else if (layer.type === "shape"){
+      el = createShapeElement(layer);
+    } else {
+      el = document.createElementNS(NS, "image");
+      el.setAttributeNS(XLINK, "href", layer.dataURL);
+      el.setAttribute("href", layer.dataURL);
+      el.setAttribute("x", -layer.naturalW/2);
+      el.setAttribute("y", -layer.naturalH/2);
+      el.setAttribute("width", layer.naturalW);
+      el.setAttribute("height", layer.naturalH);
+      el.setAttribute("preserveAspectRatio", "none");
+    }
+    const opacity = layer.opacity == null ? 100 : layer.opacity;
+    if (opacity < 100) el.setAttribute("opacity", String(Math.max(0, Math.min(100, opacity)) / 100));
+    return el;
   }
 
-  // renders an SVG string to a raster blob via an offscreen canvas
-  function svgStringToCanvasBlob(svgString, width, height, exportScale, mime, quality, fillWhite){
-    return new Promise((resolve, reject) => {
-      let svg64;
-      try{
-        svg64 = btoa(unescape(encodeURIComponent(svgString)));
-      }catch(e){
-        reject(new Error("Export failed while encoding the image."));
-        return;
-      }
-      const dataUrl = "data:image/svg+xml;base64," + svg64;
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.max(1, Math.round(width * exportScale));
-      canvas.height = Math.max(1, Math.round(height * exportScale));
-      const ctx = canvas.getContext("2d");
-      const im = new Image();
-      im.onload = () => {
-        if (fillWhite){
-          // JPG has no transparency, so paint a white backdrop first
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-        ctx.drawImage(im, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob((blob) => {
-          if (!blob) reject(new Error("Export failed while creating the image."));
-          else resolve(blob);
-        }, mime, quality);
-      };
-      im.onerror = () => reject(new Error("Export failed while rendering the image."));
-      im.src = dataUrl;
-    });
+  function buildLayerGroup(layer){
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("transform", transformString(layer.xform));
+    g.appendChild(buildLayerVisual(layer));
+    return g;
   }
 
-  // mockup: shape-clipped composite of every layer, at the shape's native size
-  function buildMockupSvgString(){
+  function buildClippedLayersSvg(){
     const outSvg = document.createElementNS(NS, "svg");
     outSvg.setAttribute("xmlns", NS);
     outSvg.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", XLINK);
@@ -1273,179 +2115,164 @@
     clipPath.id = "exportClip";
     bg.clipClones.forEach((c) => clipPath.appendChild(c.cloneNode(true)));
     defs.appendChild(clipPath);
+    const fontStyle1 = buildFontFaceDefsStyle();
+    if (fontStyle1) defs.appendChild(fontStyle1);
     outSvg.appendChild(defs);
 
     const bgGroup = document.createElementNS(NS, "g");
     bg.bgClones.forEach((c) => bgGroup.appendChild(c.cloneNode(true)));
     outSvg.appendChild(bgGroup);
 
-    for (let i = layers.length - 1; i >= 0; i--){
-      const layer = layers[i];
-      const clipG = document.createElementNS(NS, "g");
-      clipG.setAttribute("clip-path", "url(#exportClip)");
-      const moveG = document.createElementNS(NS, "g");
-      moveG.setAttribute("transform", transformString(layer.xform));
-      const imageEl = document.createElementNS(NS, "image");
-      imageEl.setAttributeNS(XLINK, "href", layer.dataURL);
-      imageEl.setAttribute("href", layer.dataURL);
-      imageEl.setAttribute("x", -layer.naturalW/2);
-      imageEl.setAttribute("y", -layer.naturalH/2);
-      imageEl.setAttribute("width", layer.naturalW);
-      imageEl.setAttribute("height", layer.naturalH);
-      imageEl.setAttribute("preserveAspectRatio", "none");
-      moveG.appendChild(imageEl);
-      clipG.appendChild(moveG);
-      outSvg.appendChild(clipG);
-    }
+    const clipG = document.createElementNS(NS, "g");
+    clipG.setAttribute("clip-path", "url(#exportClip)");
+    layers.forEach((layer) => clipG.appendChild(buildLayerGroup(layer)));
+    outSvg.appendChild(clipG);
 
-    return { svgString: new XMLSerializer().serializeToString(outSvg), w: bg.w, h: bg.h };
+    return outSvg;
   }
 
-  // full-resolution: every layer at its real transformed size, no shape clip,
-  // no shape fill — canvas is just the bounding box of the layers, transparent PNG.
-  function buildFullLayersSvgString(){
-    const bbox = computeLayersBBox();
-    if (!bbox || bbox.w <= 0 || bbox.h <= 0) return null;
+  function layerCorners(layer){
+    const hw = layer.naturalW/2, hh = layer.naturalH/2;
+    const pts = [[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]];
+    return pts.map(([lx, ly]) => localToStage(layer.xform, lx, ly));
+  }
 
+  function computeFullLayersBounds(){
+    let minX = 0, minY = 0, maxX = bg.w, maxY = bg.h;
+    layers.forEach((layer) => {
+      layerCorners(layer).forEach((p) => {
+        minX = Math.min(minX, p.x);
+        minY = Math.min(minY, p.y);
+        maxX = Math.max(maxX, p.x);
+        maxY = Math.max(maxY, p.y);
+      });
+    });
+    return { x:minX, y:minY, w:maxX-minX, h:maxY-minY };
+  }
+
+  function buildFullLayersSvg(bounds){
     const outSvg = document.createElementNS(NS, "svg");
     outSvg.setAttribute("xmlns", NS);
     outSvg.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", XLINK);
-    outSvg.setAttribute("viewBox", `${bbox.x} ${bbox.y} ${bbox.w} ${bbox.h}`);
-    outSvg.setAttribute("width", bbox.w);
-    outSvg.setAttribute("height", bbox.h);
+    outSvg.setAttribute("viewBox", `${bounds.x} ${bounds.y} ${bounds.w} ${bounds.h}`);
+    outSvg.setAttribute("width", bounds.w);
+    outSvg.setAttribute("height", bounds.h);
 
-    for (let i = layers.length - 1; i >= 0; i--){
-      const layer = layers[i];
-      const moveG = document.createElementNS(NS, "g");
-      moveG.setAttribute("transform", transformString(layer.xform));
-      const imageEl = document.createElementNS(NS, "image");
-      imageEl.setAttributeNS(XLINK, "href", layer.dataURL);
-      imageEl.setAttribute("href", layer.dataURL);
-      imageEl.setAttribute("x", -layer.naturalW/2);
-      imageEl.setAttribute("y", -layer.naturalH/2);
-      imageEl.setAttribute("width", layer.naturalW);
-      imageEl.setAttribute("height", layer.naturalH);
-      imageEl.setAttribute("preserveAspectRatio", "none");
-      moveG.appendChild(imageEl);
-      outSvg.appendChild(moveG);
+    const fontStyle2 = buildFontFaceDefsStyle();
+    if (fontStyle2){
+      const defs = document.createElementNS(NS, "defs");
+      defs.appendChild(fontStyle2);
+      outSvg.appendChild(defs);
     }
 
-    return { svgString: new XMLSerializer().serializeToString(outSvg), bbox };
+    layers.forEach((layer) => outSvg.appendChild(buildLayerGroup(layer)));
+
+    return outSvg;
   }
 
-  // ---- minimal zero-dependency ZIP writer (STORE method, no compression) ----
-  const CRC_TABLE = (function(){
-    const table = new Uint32Array(256);
-    for (let n = 0; n < 256; n++){
-      let c = n;
-      for (let k = 0; k < 8; k++){
-        c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+  function rasterizeSvgToBlob(outSvg, canvasW, canvasH, opts, cb){
+    const svgString = new XMLSerializer().serializeToString(outSvg);
+    let svg64;
+    try{
+      svg64 = btoa(unescape(encodeURIComponent(svgString)));
+    }catch(e){
+      cb(null, "Export failed while encoding the image.");
+      return;
+    }
+    const dataUrl = "data:image/svg+xml;base64," + svg64;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = canvasW;
+    canvas.height = canvasH;
+    const ctx = canvas.getContext("2d");
+
+    const im = new Image();
+    im.onload = () => {
+      if (opts.background){
+        ctx.fillStyle = opts.background;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
-      table[n] = c >>> 0;
+      ctx.drawImage(im, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => {
+        if (!blob){
+          cb(null, "Export failed while creating the image.");
+          return;
+        }
+        cb(blob, null);
+      }, opts.mime, opts.quality);
+    };
+    im.onerror = () => cb(null, "Export failed while rendering the image. Try different photos.");
+    im.src = dataUrl;
+  }
+
+  function triggerDownload(blob, filename){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+  }
+
+  function dataURLtoBlob(dataURL){
+    const [header, base64] = dataURL.split(",");
+    const mime = (header.match(/data:(.*?);base64/) || [])[1] || "application/octet-stream";
+    const bin = atob(base64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new Blob([bytes], { type: mime });
+  }
+
+  function extFromMime(mime){
+    if (mime === "image/jpeg") return "jpg";
+    if (mime === "image/png") return "png";
+    if (mime === "image/webp") return "webp";
+    if (mime === "image/gif") return "gif";
+    return "bin";
+  }
+
+  function uniqueZipName(usedNames, name){
+    if (!usedNames.has(name)){
+      usedNames.add(name);
+      return name;
     }
-    return table;
-  })();
-  function crc32(bytes){
-    let crc = 0xFFFFFFFF;
-    for (let i = 0; i < bytes.length; i++){
-      crc = CRC_TABLE[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
-    }
-    return (crc ^ 0xFFFFFFFF) >>> 0;
-  }
-  function dosDateTime(date){
-    const dosTime = ((date.getHours() & 0x1F) << 11) | ((date.getMinutes() & 0x3F) << 5) | (Math.floor(date.getSeconds()/2) & 0x1F);
-    const dosDate = (((date.getFullYear()-1980) & 0x7F) << 9) | (((date.getMonth()+1) & 0xF) << 5) | (date.getDate() & 0x1F);
-    return { dosTime, dosDate };
-  }
-  function createZipBlob(entries){
-    const { dosTime, dosDate } = dosDateTime(new Date());
-    const encoder = new TextEncoder();
-    const fileParts = [];
-    const centralParts = [];
-    let offset = 0;
-
-    entries.forEach((entry) => {
-      const nameBytes = encoder.encode(entry.name);
-      const data = entry.data;
-      const crc = crc32(data);
-      const size = data.length;
-
-      const localHeader = new DataView(new ArrayBuffer(30));
-      localHeader.setUint32(0, 0x04034b50, true);
-      localHeader.setUint16(4, 20, true);
-      localHeader.setUint16(6, 0, true);
-      localHeader.setUint16(8, 0, true);
-      localHeader.setUint16(10, dosTime, true);
-      localHeader.setUint16(12, dosDate, true);
-      localHeader.setUint32(14, crc, true);
-      localHeader.setUint32(18, size, true);
-      localHeader.setUint32(22, size, true);
-      localHeader.setUint16(26, nameBytes.length, true);
-      localHeader.setUint16(28, 0, true);
-      fileParts.push(new Uint8Array(localHeader.buffer), nameBytes, data);
-
-      const centralHeader = new DataView(new ArrayBuffer(46));
-      centralHeader.setUint32(0, 0x02014b50, true);
-      centralHeader.setUint16(4, 20, true);
-      centralHeader.setUint16(6, 20, true);
-      centralHeader.setUint16(8, 0, true);
-      centralHeader.setUint16(10, 0, true);
-      centralHeader.setUint16(12, dosTime, true);
-      centralHeader.setUint16(14, dosDate, true);
-      centralHeader.setUint32(16, crc, true);
-      centralHeader.setUint32(20, size, true);
-      centralHeader.setUint32(24, size, true);
-      centralHeader.setUint16(28, nameBytes.length, true);
-      centralHeader.setUint16(30, 0, true);
-      centralHeader.setUint16(32, 0, true);
-      centralHeader.setUint16(34, 0, true);
-      centralHeader.setUint16(36, 0, true);
-      centralHeader.setUint32(38, 0, true);
-      centralHeader.setUint32(42, offset, true);
-      centralParts.push(new Uint8Array(centralHeader.buffer), nameBytes);
-
-      offset += localHeader.byteLength + nameBytes.length + size;
-    });
-
-    const centralStart = offset;
-    const centralSize = centralParts.reduce((sum, p) => sum + p.length, 0);
-
-    const eocd = new DataView(new ArrayBuffer(22));
-    eocd.setUint32(0, 0x06054b50, true);
-    eocd.setUint16(4, 0, true);
-    eocd.setUint16(6, 0, true);
-    eocd.setUint16(8, entries.length, true);
-    eocd.setUint16(10, entries.length, true);
-    eocd.setUint32(12, centralSize, true);
-    eocd.setUint32(16, centralStart, true);
-    eocd.setUint16(20, 0, true);
-
-    return new Blob([...fileParts, ...centralParts, new Uint8Array(eocd.buffer)], { type: "application/zip" });
-  }
-
-  function dataURLToUint8Array(dataURL){
-    const base64 = dataURL.slice(dataURL.indexOf(",") + 1);
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return bytes;
-  }
-  function sanitizeFilename(name){
-    return String(name).replace(/[\/\\:*?"<>|]+/g, "_").trim() || "image";
-  }
-  function ensureUniqueName(name, usedNames){
-    if (!usedNames.has(name)) return name;
     const dot = name.lastIndexOf(".");
     const base = dot === -1 ? name : name.slice(0, dot);
     const ext = dot === -1 ? "" : name.slice(dot);
-    let i = 2;
-    let candidate = `${base}-${i}${ext}`;
-    while (usedNames.has(candidate)){ i += 1; candidate = `${base}-${i}${ext}`; }
+    let n = 2, candidate;
+    do{
+      candidate = `${base} (${n})${ext}`;
+      n++;
+    }while(usedNames.has(candidate));
+    usedNames.add(candidate);
     return candidate;
   }
 
-  // ---- combined export: mockup JPG + full-layers PNG + original uploads, zipped together ----
-  async function exportZip(){
+  // ---- export: clipped JPG (what shows through the shape) ----
+  function buildJPGBlob(cb){
+    const outSvg = buildClippedLayersSvg();
+    const longSide = Math.max(bg.w, bg.h);
+    const exportScale = Math.max(1, Math.min(8, Math.round(2400 / longSide)));
+    const canvasW = Math.max(1, Math.round(bg.w * exportScale));
+    const canvasH = Math.max(1, Math.round(bg.h * exportScale));
+    rasterizeSvgToBlob(outSvg, canvasW, canvasH, { background:"#ffffff", mime:"image/jpeg", quality:0.75 }, cb);
+  }
+
+  // ---- export: full, unclipped layer stack as PNG, extended to cover every layer ----
+  function buildFullLayersPNGBlob(cb){
+    const bounds = computeFullLayersBounds();
+    const outSvg = buildFullLayersSvg(bounds);
+    const longSide = Math.max(bounds.w, bounds.h);
+    const exportScale = Math.max(1, Math.min(8, Math.round(3000 / longSide)));
+    const canvasW = Math.max(1, Math.round(bounds.w * exportScale));
+    const canvasH = Math.max(1, Math.round(bounds.h * exportScale));
+    rasterizeSvgToBlob(outSvg, canvasW, canvasH, { background:null, mime:"image/png" }, cb);
+  }
+
+  // ---- export: zip containing the JPG mockup, full-layers PNG, and original uploads ----
+  function exportZip(){
     if (!layers.length || !bg){
       alert("Add at least one image layer first.");
       return;
@@ -1453,57 +2280,72 @@
     downloadZipBtn.disabled = true;
     downloadZipBtn.textContent = "Preparing…";
 
-    try{
-      const entries = [];
+    // make sure every Google Font actually used by a text layer is embedded as a data URI
+    // before rasterizing — otherwise the isolated export context can't fetch it and the
+    // JPG/PNG would silently fall back to a generic font.
+    const neededFamilies = new Set();
+    layers.forEach((l) => {
+      if (l.type !== "text") return;
+      const def = BUILTIN_FONTS.find((f) => f.value === l.fontFamily);
+      if (def && def.google) neededFamilies.add(def.google);
+    });
 
-      const mockup = buildMockupSvgString();
-      const mockupScale = Math.max(1, Math.min(8, Math.round(2400 / Math.max(mockup.w, mockup.h))));
-      const jpgBlob = await svgStringToCanvasBlob(mockup.svgString, mockup.w, mockup.h, mockupScale, "image/jpeg", 0.75, true);
-      entries.push({ name: buildExportFilename("jpg"), data: new Uint8Array(await jpgBlob.arrayBuffer()) });
+    Promise.all(Array.from(neededFamilies).map(ensureGoogleFontEmbedded)).then(() => {
+      buildJPGBlob((jpgBlob, jpgErr) => {
+        if (jpgErr){ alert(jpgErr); resetDownloadZipBtn(); return; }
+        buildFullLayersPNGBlob((pngBlob, pngErr) => {
+          if (pngErr){ alert(pngErr); resetDownloadZipBtn(); return; }
 
-      const full = buildFullLayersSvgString();
-      if (full){
-        const fullScale = Math.max(1, Math.min(8, Math.round(2400 / Math.max(full.bbox.w, full.bbox.h))));
-        const pngBlob = await svgStringToCanvasBlob(full.svgString, full.bbox.w, full.bbox.h, fullScale, "image/png", undefined, false);
-        entries.push({ name: buildExportFilename("png", "full-layers"), data: new Uint8Array(await pngBlob.arrayBuffer()) });
-      }
+          const zip = new JSZip();
+          zip.file(buildExportFilename("jpg"), jpgBlob);
+          zip.file(buildExportFilename("png", "full-layers"), pngBlob);
 
-      const usedNames = new Set(entries.map((e) => e.name));
-      layers.slice().reverse().forEach((layer, idx) => {
-        const data = dataURLToUint8Array(layer.dataURL);
-        const name = ensureUniqueName("originals/" + sanitizeFilename(layer.name || ("layer-" + (idx+1))), usedNames);
-        usedNames.add(name);
-        entries.push({ name, data });
+          const imageLayers = layers.filter((l) => l.type === "image");
+          if (imageLayers.length){
+            const originalsFolder = zip.folder("original-images");
+            const usedNames = new Set();
+            imageLayers.forEach((layer) => {
+              const blob = dataURLtoBlob(layer.dataURL);
+              let name = layer.name || `layer.${extFromMime(blob.type)}`;
+              if (!/\.[a-z0-9]+$/i.test(name)) name += `.${extFromMime(blob.type)}`;
+              originalsFolder.file(uniqueZipName(usedNames, name), blob);
+            });
+          }
+
+          zip.generateAsync({ type: "blob" }).then((zipBlob) => {
+            triggerDownload(zipBlob, buildExportFilename("zip"));
+            resetDownloadZipBtn();
+          }).catch(() => {
+            alert("Export failed while creating the zip file.");
+            resetDownloadZipBtn();
+          });
+        });
       });
-
-      const zipBlob = createZipBlob(entries);
-      const url = URL.createObjectURL(zipBlob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = buildExportFilename("zip");
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 3000);
-    }catch(e){
-      alert((e && e.message) || "Export failed.");
-    }finally{
-      resetDownloadZipBtn();
-    }
+    });
   }
 
   function resetDownloadZipBtn(){
-    downloadZipBtn.disabled = !layers.length;
+    downloadZipBtn.disabled = layers.length === 0;
     downloadZipBtn.textContent = "Download ZIP";
   }
 
   downloadZipBtn.addEventListener("click", exportZip);
 
   // ---- init ----
+  BUILTIN_FONTS.forEach((f) => {
+    const opt = document.createElement("option");
+    opt.value = f.value;
+    opt.textContent = f.label;
+    builtinFontGroup.appendChild(opt);
+    if (f.google) ensureGoogleFontEmbedded(f.google); // warm the export cache up front
+  });
+
   shapeSelect.value = "left";
+  currentShapeLabel = BUILTIN_SHAPES.left.label;
   parseAndLoadBackground(BUILTIN_SHAPES.left.svg);
-  renderLayersList();
-  setControlsEnabled(false);
+  renderLayerList();
+  updateControlsEnabled();
+  syncTextControls();
 })();
 </script>
 </body>
