@@ -1197,41 +1197,87 @@
 
     const clipG = document.createElementNS(NS, "g");
     clipG.setAttribute("clip-path", "url(#userClip)");
+    // layers are appended in back-to-front order, so within this shared clip group the
+    // browser's own paint-order hit-testing already gives "topmost layer wins" for free —
+    // each layer's own hit rect only needs to sit inside that layer's own g.
     layers.forEach((layer) => {
       const layerG = document.createElementNS(NS, "g");
       layerG.id = "layerGroup-" + layer.id;
       layerG.setAttribute("transform", transformString(layer.xform));
       layerG.appendChild(buildLayerVisual(layer));
+      const hitRect = createLayerHitRect(layer);
+      attachLayerHitRect(hitRect, layer);
+      layerG.appendChild(hitRect);
       clipG.appendChild(layerG);
     });
     levelGroup.appendChild(clipG);
 
     const selected = getSelectedLayer();
     if (selected){
+      // purely a visual indicator now (pointer-events:none) — selection/move is handled by
+      // each layer's own hit rect above, so this can't shadow clicks meant for other layers.
       const guideG = document.createElementNS(NS, "g");
       guideG.id = "guideGroup";
       guideG.setAttribute("transform", transformString(selected.xform));
+      guideG.setAttribute("pointer-events", "none");
       const guideRect = document.createElementNS(NS, "rect");
       guideRect.id = "guideRect";
       guideRect.setAttribute("x", -selected.naturalW/2);
       guideRect.setAttribute("y", -selected.naturalH/2);
       guideRect.setAttribute("width", selected.naturalW);
       guideRect.setAttribute("height", selected.naturalH);
-      guideRect.setAttribute("fill", "#ffffff");
-      guideRect.setAttribute("fill-opacity", "0.001");
+      guideRect.setAttribute("fill", "none");
       guideRect.setAttribute("stroke", "#3b82f6");
       const sw = Math.max(bg.w, bg.h) * 0.003;
       guideRect.setAttribute("stroke-width", String(sw));
       guideRect.setAttribute("stroke-dasharray", (sw*4) + "," + (sw*3));
-      guideRect.setAttribute("pointer-events", "all");
-      guideRect.style.cursor = "grab";
       guideRect.style.strokeOpacity = showGuide ? "1" : "0";
       guideG.appendChild(guideRect);
       levelGroup.appendChild(guideG);
     }
 
     updateHandles();
-    attachStageInteractions();
+  }
+
+  // ---- per-layer hit area: full bounding box, invisible, always present so clicking ----
+  // ---- anywhere in a layer (selected or not) can select and/or drag it.            ----
+  function createLayerHitRect(layer){
+    const hw = layer.naturalW/2, hh = layer.naturalH/2;
+    const rect = document.createElementNS(NS, "rect");
+    rect.setAttribute("x", String(-hw));
+    rect.setAttribute("y", String(-hh));
+    rect.setAttribute("width", String(layer.naturalW));
+    rect.setAttribute("height", String(layer.naturalH));
+    rect.setAttribute("fill", "#ffffff");
+    rect.setAttribute("fill-opacity", "0.001");
+    rect.setAttribute("pointer-events", "all");
+    rect.style.cursor = "grab";
+    return rect;
+  }
+
+  function attachLayerHitRect(hitRect, layer){
+    hitRect.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (layer.id !== selectedLayerId) selectLayer(layer.id);
+      hitRect.style.cursor = "grabbing";
+      const start = stagePointFromEvent(e);
+      const startCx = layer.xform.cx, startCy = layer.xform.cy;
+      function move(ev){
+        const cur = stagePointFromEvent(ev);
+        layer.xform.cx = startCx + (cur.x - start.x);
+        layer.xform.cy = startCy + (cur.y - start.y);
+        updateSelectedLayerTransform();
+      }
+      function up(){
+        hitRect.style.cursor = "grab";
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+      }
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+    });
   }
 
   function updateSelectedLayerTransform(){
@@ -1355,34 +1401,6 @@
     if (!el) return;
     el.style.left = px.x + "px";
     el.style.top = px.y + "px";
-  }
-
-  // ---- dragging: move (guide rect, recreated on buildStage) ----
-  function attachStageInteractions(){
-    const guideRect = document.getElementById("guideRect");
-    if (!guideRect) return;
-    guideRect.addEventListener("pointerdown", (e) => {
-      if (e.button !== 0) return;
-      const selected = getSelectedLayer();
-      if (!selected) return;
-      e.preventDefault();
-      guideRect.style.cursor = "grabbing";
-      const start = stagePointFromEvent(e);
-      const startCx = selected.xform.cx, startCy = selected.xform.cy;
-      function move(ev){
-        const cur = stagePointFromEvent(ev);
-        selected.xform.cx = startCx + (cur.x - start.x);
-        selected.xform.cy = startCy + (cur.y - start.y);
-        updateSelectedLayerTransform();
-      }
-      function up(){
-        guideRect.style.cursor = "grab";
-        window.removeEventListener("pointermove", move);
-        window.removeEventListener("pointerup", up);
-      }
-      window.addEventListener("pointermove", move);
-      window.addEventListener("pointerup", up);
-    });
   }
 
   // ---- dragging: resize (corner handles, attached once) ----
