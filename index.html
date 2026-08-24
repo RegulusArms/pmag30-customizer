@@ -919,7 +919,15 @@
     return fetch(`https://fonts.googleapis.com/css2?family=${q}&display=swap`)
       .then((r) => r.text())
       .then((cssText) => {
-        const match = cssText.match(/src:\s*url\(([^)]+)\)\s*format\('woff2'\)/) || cssText.match(/src:\s*url\(([^)]+)\)/);
+        // the response has one @font-face block per unicode subset (cyrillic, greek,
+        // symbols, latin, ...) — grabbing the first url() in the whole text picks
+        // whichever subset happens to come first (often cyrillic-ext), whose font file
+        // has no Latin glyphs, so exported text silently falls back to a generic font.
+        // Pick the "latin" block specifically (it's always last when present).
+        const blocks = Array.from(cssText.matchAll(/\/\*\s*([\w-]+)\s*\*\/\s*@font-face\s*\{([^}]*)\}/g));
+        const chosen = (blocks.find((b) => b[1] === "latin") || blocks[blocks.length - 1]);
+        const searchText = chosen ? chosen[2] : cssText;
+        const match = searchText.match(/src:\s*url\(([^)]+)\)\s*format\('woff2'\)/) || searchText.match(/src:\s*url\(([^)]+)\)/);
         if (!match) throw new Error("No font file URL found for " + family);
         return fetch(match[1]).then((r) => r.blob());
       })
