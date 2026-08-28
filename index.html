@@ -201,7 +201,34 @@
   .color-wheel-wrap{
     display:flex;
     justify-content:center;
+    align-items:center;
+    gap:10px;
     margin:4px 0 2px;
+  }
+  .eyedropper-btn{
+    flex:0 0 auto;
+    width:32px;
+    height:32px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:1px solid var(--panel-border);
+    background:#fff;
+    color:var(--text);
+    border-radius:8px;
+    cursor:pointer;
+    transition:background .12s ease, color .12s ease, border-color .12s ease;
+  }
+  .eyedropper-btn:hover{background:#f2f3f5;}
+  .eyedropper-btn.active{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+  }
+  #stageContainer.eyedropper-mode{
+    cursor:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24'><path d='M18.7 3.3a2.4 2.4 0 0 1 0 3.4l-1.6 1.6-3.4-3.4 1.6-1.6a2.4 2.4 0 0 1 3.4 0Z' fill='white' stroke='black' stroke-width='1.3'/><path d='M15.5 6.5 5 17v3.5h3.5L18 10' fill='white' stroke='black' stroke-width='1.3'/><path d='m11.5 8.5 4 4' stroke='black' stroke-width='1.3'/></svg>") 4 28,
+      crosshair;
   }
   .color-wheel{
     position:relative;
@@ -495,6 +522,13 @@
           <div class="color-wheel" id="colorWheel" role="slider" aria-label="Color hue and saturation" tabindex="0">
             <div class="color-wheel-dot" id="colorWheelDot"></div>
           </div>
+          <button type="button" id="eyedropperBtn" class="eyedropper-btn" title="Pick a color from the artwork (Esc to cancel)" aria-label="Pick a color from the artwork" aria-pressed="false">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18.7 3.3a2.4 2.4 0 0 1 0 3.4l-1.6 1.6-3.4-3.4 1.6-1.6a2.4 2.4 0 0 1 3.4 0Z"/>
+              <path d="M15.5 6.5 5 17v3.5h3.5L18 10"/>
+              <path d="m11.5 8.5 4 4"/>
+            </svg>
+          </button>
         </div>
         <div class="cmyk-row" style="margin-top:10px;">
           <label for="cmykK">K</label>
@@ -731,6 +765,7 @@
   const cmykKInput = document.getElementById("cmykKInput");
   const colorSwatch = document.getElementById("colorSwatch");
   const cmykReadout = document.getElementById("cmykReadout");
+  const eyedropperBtn = document.getElementById("eyedropperBtn");
   const opacityRange = document.getElementById("opacityRange");
   const opacityLabel = document.getElementById("opacityLabel");
   const addShapeButtons = document.querySelectorAll("[data-shape-kind]");
@@ -2255,6 +2290,127 @@
     cmykKVal.textContent = k + "%";
     updateColorReadout(selected);
     buildStage();
+  });
+
+  // ---- eyedropper: sample a color straight off the artwork on the stage ----
+  let eyedropperActive = false;
+  let eyedropperSnapshot = null; // { canvas, ctx, scaleX, scaleY }
+  let eyedropperPrevColor = null;
+
+  function buildEyedropperSnapshot(){
+    if (!bg) return null;
+    const scale = Math.max(1, Math.min(4, 1200 / Math.max(bg.w, bg.h)));
+    const w = Math.max(1, Math.round(bg.w * scale));
+    const h = Math.max(1, Math.round(bg.h * scale));
+    // clone + strip the live pan/zoom CSS transform (workspace view.tx/ty/scale, set by
+    // applyViewTransform) before serializing — otherwise it re-applies inside the
+    // standalone rasterized image on top of the viewBox math, corrupting the geometry
+    const clone = stage.cloneNode(true);
+    clone.style.transform = "";
+    clone.style.transformOrigin = "";
+    clone.setAttribute("width", String(w));
+    clone.setAttribute("height", String(h));
+    const svgText = new XMLSerializer().serializeToString(clone);
+    const svgUrl = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgText);
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve({ canvas, ctx, scaleX: w / bg.w, scaleY: h / bg.h });
+      };
+      img.onerror = () => resolve(null);
+      img.src = svgUrl;
+    });
+  }
+
+  // ---- reconstructs this app's hue/sat wheel + separate K-slider model from a  ----
+  // sampled RGB pixel: HSV's value channel is exactly the app's (1 - k) darkening
+  // factor, so v -> k and the hue/sat at full value reproduce the same pixel exactly.
+  function rgbToWheelCmyk(r, g, b){
+    const hsv = rgbToHsv(r / 255, g / 255, b / 255);
+    const k = (1 - hsv.v) * 100;
+    const rgb1 = hsvToRgb(hsv.h, hsv.s, 1);
+    const c = (1 - rgb1.r) * 100, m = (1 - rgb1.g) * 100, y = (1 - rgb1.b) * 100;
+    return { c, m, y, k, hue: hsv.h, sat: hsv.s };
+  }
+
+  function applySampledColor(sample){
+    cmykCInput.value = Math.round(sample.c);
+    cmykMInput.value = Math.round(sample.m);
+    cmykYInput.value = Math.round(sample.y);
+    cmykKInput.value = Math.round(sample.k);
+    applyCmykFromInputs();
+  }
+
+  function sampleAtEvent(e){
+    if (!eyedropperSnapshot) return;
+    const stagePt = stagePointFromEvent(e);
+    const px = Math.floor(stagePt.x * eyedropperSnapshot.scaleX);
+    const py = Math.floor(stagePt.y * eyedropperSnapshot.scaleY);
+    if (px < 0 || py < 0 || px >= eyedropperSnapshot.canvas.width || py >= eyedropperSnapshot.canvas.height) return;
+    let data;
+    try {
+      data = eyedropperSnapshot.ctx.getImageData(px, py, 1, 1).data;
+    } catch (err) {
+      return; // tainted canvas (shouldn't happen: all layer art is embedded as data URLs)
+    }
+    if (data[3] === 0) return; // transparent pixel: nothing to sample here
+    applySampledColor(rgbToWheelCmyk(data[0], data[1], data[2]));
+  }
+
+  function stopEyedropper(commit){
+    if (!eyedropperActive) return;
+    eyedropperActive = false;
+    eyedropperSnapshot = null;
+    stageContainer.classList.remove("eyedropper-mode");
+    eyedropperBtn.classList.remove("active");
+    eyedropperBtn.setAttribute("aria-pressed", "false");
+    stageContainer.removeEventListener("pointermove", sampleAtEvent);
+    stageContainer.removeEventListener("pointerdown", eyedropperPointerDown, true);
+    window.removeEventListener("keydown", eyedropperKeyDown, true);
+    if (!commit && eyedropperPrevColor){
+      applySampledColor(eyedropperPrevColor);
+    }
+    eyedropperPrevColor = null;
+  }
+
+  function eyedropperPointerDown(e){
+    if (e.button !== 0) { stopEyedropper(false); return; }
+    e.preventDefault();
+    e.stopPropagation();
+    sampleAtEvent(e);
+    stopEyedropper(true);
+  }
+
+  function eyedropperKeyDown(e){
+    if (e.key === "Escape"){
+      e.preventDefault();
+      stopEyedropper(false);
+    }
+  }
+
+  async function startEyedropper(){
+    const selected = getSelectedLayer();
+    if (!isColorableLayer(selected) || eyedropperActive) return;
+    const snapshot = await buildEyedropperSnapshot();
+    if (!snapshot) return;
+    eyedropperSnapshot = snapshot;
+    eyedropperPrevColor = { c: selected.color.c, m: selected.color.m, y: selected.color.y, k: selected.color.k };
+    eyedropperActive = true;
+    stageContainer.classList.add("eyedropper-mode");
+    eyedropperBtn.classList.add("active");
+    eyedropperBtn.setAttribute("aria-pressed", "true");
+    stageContainer.addEventListener("pointermove", sampleAtEvent);
+    stageContainer.addEventListener("pointerdown", eyedropperPointerDown, true);
+    window.addEventListener("keydown", eyedropperKeyDown, true);
+  }
+
+  eyedropperBtn.addEventListener("click", () => {
+    if (eyedropperActive) stopEyedropper(false);
+    else startEyedropper();
   });
 
   // ---- events: opacity (shared across image / text / shape layers) ----
