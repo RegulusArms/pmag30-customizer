@@ -165,6 +165,32 @@
     text-align:right;
     flex:0 0 auto;
   }
+  .cmyk-inputs{
+    display:flex;
+    gap:6px;
+    margin-top:8px;
+  }
+  .cmyk-inputs .cmyk-input-field{
+    flex:1 1 0;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .cmyk-inputs label{
+    font-size:11px;
+    font-weight:600;
+    color:var(--muted);
+    text-align:center;
+  }
+  .cmyk-inputs input[type="number"]{
+    width:100%;
+    padding:5px 4px;
+    font-size:12px;
+    text-align:center;
+    border-radius:6px;
+    border:1px solid var(--panel-border);
+    font-family:inherit;
+  }
   .color-swatch{
     width:24px;
     height:24px;
@@ -365,7 +391,7 @@
 <div class="app">
   <aside class="panel">
     <h1>PMAG 30 Customizer</h1>
-    <p class="sub">Upload one or more images or add text layers, then drag to move, use the corner handles to resize, and the top handle (or shift + scroll, or the [ ] keys) to rotate. Layers only show through the colored area of the shape. Reorder layers by dragging them in the list below.</p>
+    <p class="sub">Upload one or more images or add text layers, then drag to move, use the corner handles to resize, and the top handle (or shift + scroll, or the [ ] keys) to rotate. Drag the edge bubbles on an image or shape to stretch it in that direction. Layers only show through the colored area of the shape. Reorder layers by dragging them in the list below.</p>
 
     <div class="field">
       <label for="imageInput">Add image layer</label>
@@ -400,6 +426,17 @@
     <div class="btn-row" style="margin-bottom:18px;">
       <button class="btn" id="fitBtn" disabled>Fit to shape</button>
       <button class="btn" id="removeImgBtn" disabled>Remove layer</button>
+    </div>
+
+    <div id="imageFieldsGroup" style="display:none;margin-bottom:18px;">
+      <div class="btn-row" style="margin-bottom:8px;">
+        <button class="btn" id="resetImageSizeBtn" style="width:100%;">Reset size &amp; aspect ratio</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="removeBgBtn">Remove background</button>
+        <button class="btn" id="restoreOriginalBtn" style="display:none;">Restore original</button>
+      </div>
+      <p class="hint" id="removeBgStatus" style="margin:6px 0 0;min-height:1em;"></p>
     </div>
 
     <div class="field">
@@ -464,6 +501,24 @@
           <input type="range" id="cmykK" min="0" max="100" value="100" step="1">
           <span class="val" id="cmykKVal">100%</span>
         </div>
+        <div class="cmyk-inputs">
+          <div class="cmyk-input-field">
+            <label for="cmykCInput">C</label>
+            <input type="number" id="cmykCInput" min="0" max="100" step="1" value="0">
+          </div>
+          <div class="cmyk-input-field">
+            <label for="cmykMInput">M</label>
+            <input type="number" id="cmykMInput" min="0" max="100" step="1" value="0">
+          </div>
+          <div class="cmyk-input-field">
+            <label for="cmykYInput">Y</label>
+            <input type="number" id="cmykYInput" min="0" max="100" step="1" value="0">
+          </div>
+          <div class="cmyk-input-field">
+            <label for="cmykKInput">K</label>
+            <input type="number" id="cmykKInput" min="0" max="100" step="1" value="100">
+          </div>
+        </div>
         <div class="row" style="margin-top:8px;">
           <span style="font-size:12px;color:var(--muted);">Preview</span>
           <span class="color-swatch" id="colorSwatch"></span>
@@ -510,8 +565,18 @@
 
     <hr class="sep">
 
-    <button class="btn btn-primary" id="downloadZipBtn" disabled title="Downloads a zip containing the JPG mockup, the full quality PNG layers, and your original uploaded images">Download ZIP</button>
+    <button class="btn btn-primary" id="downloadZipBtn" disabled title="Downloads a zip containing the JPG mockup, the full quality PNG layers, a PNG of each individual layer, a project.xml with every layer's position/size/stacking data, and your original uploaded images — this zip can be re-loaded with &quot;Load project ZIP&quot; below">Download ZIP</button>
     <p class="download-note">Download the zip for each side of the PMAG (left and right), then email them to ross@regulusarms.com with your GunBroker order number or square order number as the subject line.</p>
+
+    <hr class="sep">
+
+    <div class="field">
+      <label for="projectZipInput">Load project ZIP</label>
+      <div class="dropzone" id="projectZipDropzone" tabindex="0" role="button" aria-label="Drop a project zip here or click to browse">
+        <strong>Drag &amp; drop an exported project .zip here</strong><br>or click to browse — re-creates the layers, positions, and background exactly as exported
+      </div>
+      <input type="file" id="projectZipInput" accept=".zip,application/zip" style="display:none;">
+    </div>
   </aside>
 
   <main class="stage-wrap">
@@ -529,7 +594,7 @@
         <div class="handle rotate" id="handle-rotate" title="Rotate"></div>
       </div>
     </div>
-    <p class="hint">Add an image, drag inside the outline to move it, drag a corner to resize. Rotate by dragging the blue dot above it, holding shift while scrolling over the image, or pressing the [ and ] keys. Scroll to zoom the workspace, or hold the middle mouse button to pan it.</p>
+    <p class="hint">Add an image, drag inside the outline to move it, drag a corner to resize, or drag one of the side bubbles to stretch it in that direction. Rotate by dragging the blue dot above it, holding shift while scrolling over the image, or pressing the [ and ] keys. Scroll to zoom the workspace, or hold the middle mouse button to pan it.</p>
   </main>
 </div>
 
@@ -618,8 +683,9 @@
   let levelView = false;      // display-only: show the shape rotated so its bottom edge is level
   const view = { scale: 1, tx: 0, ty: 0 }; // workspace pan/zoom (CSS transform on #stage, separate from layer xforms)
   const MIN_VIEW_SCALE = 0.25, MAX_VIEW_SCALE = 10;
-  let customFonts = {};        // familyName -> data URL
+  let customFonts = {};        // familyName -> array of {dataURL, unicodeRange}
   let customFontCounter = 0;
+  let customFontLabels = {};   // familyName -> display label, for uploaded (non-Google) fonts only
 
   // ---- dom refs ----
   const stage = document.getElementById("stage");
@@ -627,11 +693,18 @@
   const handleLayer = document.getElementById("handleLayer");
   const imageInput = document.getElementById("imageInput");
   const dropzone = document.getElementById("dropzone");
+  const projectZipInput = document.getElementById("projectZipInput");
+  const projectZipDropzone = document.getElementById("projectZipDropzone");
   const layerListEl = document.getElementById("layerList");
   const shapeSelect = document.getElementById("shapeSelect");
   const levelViewCheckbox = document.getElementById("levelViewCheckbox");
   const fitBtn = document.getElementById("fitBtn");
   const removeImgBtn = document.getElementById("removeImgBtn");
+  const imageFieldsGroup = document.getElementById("imageFieldsGroup");
+  const resetImageSizeBtn = document.getElementById("resetImageSizeBtn");
+  const removeBgBtn = document.getElementById("removeBgBtn");
+  const restoreOriginalBtn = document.getElementById("restoreOriginalBtn");
+  const removeBgStatus = document.getElementById("removeBgStatus");
   const zoomRange = document.getElementById("zoomRange");
   const zoomLabel = document.getElementById("zoomLabel");
   const rotRange = document.getElementById("rotRange");
@@ -652,6 +725,10 @@
   const colorWheelDot = document.getElementById("colorWheelDot");
   const cmykK = document.getElementById("cmykK");
   const cmykKVal = document.getElementById("cmykKVal");
+  const cmykCInput = document.getElementById("cmykCInput");
+  const cmykMInput = document.getElementById("cmykMInput");
+  const cmykYInput = document.getElementById("cmykYInput");
+  const cmykKInput = document.getElementById("cmykKInput");
   const colorSwatch = document.getElementById("colorSwatch");
   const cmykReadout = document.getElementById("cmykReadout");
   const opacityRange = document.getElementById("opacityRange");
@@ -731,7 +808,40 @@
     const c = Math.round(layer.color.c), m = Math.round(layer.color.m), y = Math.round(layer.color.y), k = Math.round(layer.color.k);
     cmykReadout.textContent = `C${c} M${m} Y${y} K${k}`;
     colorSwatch.style.background = layer.fillColor;
+    if (document.activeElement !== cmykCInput) cmykCInput.value = c;
+    if (document.activeElement !== cmykMInput) cmykMInput.value = m;
+    if (document.activeElement !== cmykYInput) cmykYInput.value = y;
+    if (document.activeElement !== cmykKInput) cmykKInput.value = k;
   }
+
+  // ---- CMYK number inputs: typing exact C/M/Y/K values ----
+  function applyCmykFromInputs(){
+    const selected = getSelectedLayer();
+    if (!isColorableLayer(selected)) return;
+    const clamp = (v) => Math.max(0, Math.min(100, isNaN(v) ? 0 : v));
+    const c = clamp(parseFloat(cmykCInput.value));
+    const m = clamp(parseFloat(cmykMInput.value));
+    const y = clamp(parseFloat(cmykYInput.value));
+    const k = clamp(parseFloat(cmykKInput.value));
+    selected.color = { c, m, y, k };
+    selected.fillColor = cmykToHex(c, m, y, k);
+    const rgb = { r: 1 - c/100, g: 1 - m/100, b: 1 - y/100 };
+    const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+    positionWheelDot(hsv.h, hsv.s);
+    cmykK.value = k;
+    cmykKVal.textContent = k + "%";
+    updateColorReadout(selected);
+    buildStage();
+  }
+
+  [cmykCInput, cmykMInput, cmykYInput, cmykKInput].forEach((input) => {
+    input.addEventListener("input", applyCmykFromInputs);
+    input.addEventListener("change", () => {
+      const clamp = (v) => Math.max(0, Math.min(100, isNaN(v) ? 0 : v));
+      input.value = clamp(parseFloat(input.value));
+      applyCmykFromInputs();
+    });
+  });
 
   function setColorFromWheel(hue, sat){
     const selected = getSelectedLayer();
@@ -866,6 +976,15 @@
   }
 
   // ---- custom font handling ----
+  // renders all @font-face rules for a family: Google Fonts subset into several faces
+  // (one per unicode-range, e.g. latin/latin-ext/cyrillic), each of which must be kept
+  // separate — collapsing them to one file drops glyphs outside that file's subset.
+  function fontFaceRulesFor(name){
+    return customFonts[name].map((face) =>
+      `@font-face{font-family:"${name}";src:url(${face.dataURL});${face.unicodeRange ? `unicode-range:${face.unicodeRange};` : ""}}`
+    ).join("\n");
+  }
+
   function injectFontFaceStyle(){
     let styleEl = document.getElementById("customFontFaceStyle");
     if (!styleEl){
@@ -873,9 +992,7 @@
       styleEl.id = "customFontFaceStyle";
       document.head.appendChild(styleEl);
     }
-    styleEl.textContent = Object.keys(customFonts).map((name) =>
-      `@font-face{font-family:"${name}";src:url(${customFonts[name]});}`
-    ).join("\n");
+    styleEl.textContent = Object.keys(customFonts).map(fontFaceRulesFor).join("\n");
   }
 
   // builds an SVG <style> with the same @font-face rules so exported/rasterized SVGs
@@ -884,18 +1001,22 @@
     const names = Object.keys(customFonts);
     if (!names.length) return null;
     const styleEl = document.createElementNS(NS, "style");
-    styleEl.textContent = names.map((name) =>
-      `@font-face{font-family:"${name}";src:url(${customFonts[name]});}`
-    ).join("\n");
+    styleEl.textContent = names.map(fontFaceRulesFor).join("\n");
     return styleEl;
   }
 
   function registerCustomFont(familyName, dataURL){
-    customFonts[familyName] = dataURL;
+    customFonts[familyName] = [{ dataURL, unicodeRange: null }];
+    injectFontFaceStyle();
+  }
+
+  function registerCustomFontFaces(familyName, faces){
+    customFonts[familyName] = faces;
     injectFontFaceStyle();
   }
 
   function addCustomFontOption(value, label){
+    customFontLabels[value] = label;
     const opt = document.createElement("option");
     opt.value = value;
     opt.textContent = label;
@@ -914,38 +1035,42 @@
   // the <link> stylesheet in <head> covers the live editor, but exported/rasterized SVGs
   // are rendered in an isolated context that can't see page stylesheets — only fonts baked
   // into the SVG's own @font-face (via customFonts) survive export, same as uploaded fonts.
-  function fetchGoogleFontDataURI(family){
+  // Google's CSS2 API returns one @font-face block per unicode-range subset (latin,
+  // latin-ext, cyrillic, vietnamese, ...). Grabbing only the first block's font file
+  // (as an earlier version of this function did) meant only that subset's glyphs
+  // rendered correctly in exports — any other character silently fell back to a
+  // generic font, e.g. every letter after the first. Fetch every subset instead.
+  function fetchGoogleFontFaces(family){
     const q = encodeURIComponent(family).replace(/%20/g, "+");
     return fetch(`https://fonts.googleapis.com/css2?family=${q}&display=swap`)
       .then((r) => r.text())
       .then((cssText) => {
-        // the response has one @font-face block per unicode subset (cyrillic, greek,
-        // symbols, latin, ...) — grabbing the first url() in the whole text picks
-        // whichever subset happens to come first (often cyrillic-ext), whose font file
-        // has no Latin glyphs, so exported text silently falls back to a generic font.
-        // Pick the "latin" block specifically (it's always last when present).
-        const blocks = Array.from(cssText.matchAll(/\/\*\s*([\w-]+)\s*\*\/\s*@font-face\s*\{([^}]*)\}/g));
-        const chosen = (blocks.find((b) => b[1] === "latin") || blocks[blocks.length - 1]);
-        const searchText = chosen ? chosen[2] : cssText;
-        const match = searchText.match(/src:\s*url\(([^)]+)\)\s*format\('woff2'\)/) || searchText.match(/src:\s*url\(([^)]+)\)/);
-        if (!match) throw new Error("No font file URL found for " + family);
-        return fetch(match[1]).then((r) => r.blob());
-      })
-      .then((blob) => new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      }));
+        const blocks = cssText.match(/@font-face\s*{[^}]*}/g) || [];
+        const faces = blocks.map((block) => {
+          const urlMatch = block.match(/src:\s*url\(([^)]+)\)\s*format\('woff2'\)/) || block.match(/src:\s*url\(([^)]+)\)/);
+          if (!urlMatch) return null;
+          const rangeMatch = block.match(/unicode-range:\s*([^;]+);/);
+          return { url: urlMatch[1], unicodeRange: rangeMatch ? rangeMatch[1].trim() : null };
+        }).filter(Boolean);
+        if (!faces.length) throw new Error("No font file URL found for " + family);
+        return Promise.all(faces.map((face) =>
+          fetch(face.url).then((r) => r.blob()).then((blob) => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve({ unicodeRange: face.unicodeRange, dataURL: reader.result });
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          }))
+        ));
+      });
   }
 
   const googleFontEmbedPromises = {};
   function ensureGoogleFontEmbedded(familyName){
     if (customFonts[familyName]) return Promise.resolve();
     if (googleFontEmbedPromises[familyName]) return googleFontEmbedPromises[familyName];
-    const p = fetchGoogleFontDataURI(familyName)
-      .then((dataURL) => {
-        registerCustomFont(familyName, dataURL);
+    const p = fetchGoogleFontFaces(familyName)
+      .then((faces) => {
+        registerCustomFontFaces(familyName, faces);
         let changed = false;
         layers.forEach((l) => {
           if (l.type === "text" && l.fontFamily.indexOf(`"${familyName}"`) !== -1){
@@ -1205,87 +1330,50 @@
 
     const clipG = document.createElementNS(NS, "g");
     clipG.setAttribute("clip-path", "url(#userClip)");
-    // layers are appended in back-to-front order, so within this shared clip group the
-    // browser's own paint-order hit-testing already gives "topmost layer wins" for free —
-    // each layer's own hit rect only needs to sit inside that layer's own g.
+    // invisible backstop so a pointerdown anywhere within the visible/clipped shape area
+    // reaches our click-to-select handler, even over empty spots between layers.
+    const hitCatcher = document.createElementNS(NS, "rect");
+    hitCatcher.setAttribute("x", "0");
+    hitCatcher.setAttribute("y", "0");
+    hitCatcher.setAttribute("width", String(bg.w));
+    hitCatcher.setAttribute("height", String(bg.h));
+    hitCatcher.setAttribute("fill", "#000");
+    hitCatcher.setAttribute("fill-opacity", "0.001");
+    hitCatcher.setAttribute("pointer-events", "all");
+    clipG.appendChild(hitCatcher);
     layers.forEach((layer) => {
       const layerG = document.createElementNS(NS, "g");
       layerG.id = "layerGroup-" + layer.id;
       layerG.setAttribute("transform", transformString(layer.xform));
       layerG.appendChild(buildLayerVisual(layer));
-      const hitRect = createLayerHitRect(layer);
-      attachLayerHitRect(hitRect, layer);
-      layerG.appendChild(hitRect);
       clipG.appendChild(layerG);
     });
     levelGroup.appendChild(clipG);
 
     const selected = getSelectedLayer();
     if (selected){
-      // purely a visual indicator now (pointer-events:none) — selection/move is handled by
-      // each layer's own hit rect above, so this can't shadow clicks meant for other layers.
       const guideG = document.createElementNS(NS, "g");
       guideG.id = "guideGroup";
       guideG.setAttribute("transform", transformString(selected.xform));
-      guideG.setAttribute("pointer-events", "none");
       const guideRect = document.createElementNS(NS, "rect");
       guideRect.id = "guideRect";
       guideRect.setAttribute("x", -selected.naturalW/2);
       guideRect.setAttribute("y", -selected.naturalH/2);
       guideRect.setAttribute("width", selected.naturalW);
       guideRect.setAttribute("height", selected.naturalH);
-      guideRect.setAttribute("fill", "none");
+      guideRect.setAttribute("fill", "#ffffff");
+      guideRect.setAttribute("fill-opacity", "0.001");
       guideRect.setAttribute("stroke", "#3b82f6");
       const sw = Math.max(bg.w, bg.h) * 0.003;
       guideRect.setAttribute("stroke-width", String(sw));
       guideRect.setAttribute("stroke-dasharray", (sw*4) + "," + (sw*3));
+      guideRect.setAttribute("pointer-events", "none");
       guideRect.style.strokeOpacity = showGuide ? "1" : "0";
       guideG.appendChild(guideRect);
       levelGroup.appendChild(guideG);
     }
 
     updateHandles();
-  }
-
-  // ---- per-layer hit area: full bounding box, invisible, always present so clicking ----
-  // ---- anywhere in a layer (selected or not) can select and/or drag it.            ----
-  function createLayerHitRect(layer){
-    const hw = layer.naturalW/2, hh = layer.naturalH/2;
-    const rect = document.createElementNS(NS, "rect");
-    rect.setAttribute("x", String(-hw));
-    rect.setAttribute("y", String(-hh));
-    rect.setAttribute("width", String(layer.naturalW));
-    rect.setAttribute("height", String(layer.naturalH));
-    rect.setAttribute("fill", "#ffffff");
-    rect.setAttribute("fill-opacity", "0.001");
-    rect.setAttribute("pointer-events", "all");
-    rect.style.cursor = "grab";
-    return rect;
-  }
-
-  function attachLayerHitRect(hitRect, layer){
-    hitRect.addEventListener("pointerdown", (e) => {
-      if (e.button !== 0) return;
-      e.preventDefault();
-      e.stopPropagation();
-      if (layer.id !== selectedLayerId) selectLayer(layer.id);
-      hitRect.style.cursor = "grabbing";
-      const start = stagePointFromEvent(e);
-      const startCx = layer.xform.cx, startCy = layer.xform.cy;
-      function move(ev){
-        const cur = stagePointFromEvent(ev);
-        layer.xform.cx = startCx + (cur.x - start.x);
-        layer.xform.cy = startCy + (cur.y - start.y);
-        updateSelectedLayerTransform();
-      }
-      function up(){
-        hitRect.style.cursor = "grab";
-        window.removeEventListener("pointermove", move);
-        window.removeEventListener("pointerup", up);
-      }
-      window.addEventListener("pointermove", move);
-      window.addEventListener("pointerup", up);
-    });
   }
 
   function updateSelectedLayerTransform(){
@@ -1390,8 +1478,9 @@
     placeHandle("handle-bl", corners.bl);
     placeHandle("handle-rotate", rotStage);
 
-    // stretch/smoosh (non-uniform resize) handles — shapes only
-    const canStretch = selected.type === "shape";
+    // stretch/smoosh (non-uniform resize) handles — shapes and images (images already
+    // render with preserveAspectRatio="none", so independent w/h "just works")
+    const canStretch = selected.type === "shape" || selected.type === "image";
     ["handle-top","handle-bottom","handle-left","handle-right"].forEach((id) => {
       document.getElementById(id).style.display = canStretch ? "block" : "none";
     });
@@ -1410,6 +1499,62 @@
     el.style.left = px.x + "px";
     el.style.top = px.y + "px";
   }
+
+  // ---- click-to-select + drag-to-move ----
+  // inverse of localToStage: converts a stage-space point into a layer's own local
+  // (unrotated, unscaled) coordinate space, so it can be compared against that layer's
+  // naturalW/naturalH bounding box for hit-testing.
+  function stageToLocal(xform, sx, sy){
+    const dx = sx - xform.cx, dy = sy - xform.cy;
+    const rad = xform.rot * Math.PI/180;
+    const cos = Math.cos(rad), sin = Math.sin(rad);
+    return {
+      x: (dx*cos + dy*sin) / xform.scale,
+      y: (-dx*sin + dy*cos) / xform.scale
+    };
+  }
+
+  // topmost layer wins: iterate back-to-front (layers[] is bottom-to-top, matching
+  // render order), so a fully-overlapped layer underneath never steals the click.
+  function hitTestLayerAt(stagePt){
+    for (let i = layers.length - 1; i >= 0; i--){
+      const layer = layers[i];
+      const local = stageToLocal(layer.xform, stagePt.x, stagePt.y);
+      if (Math.abs(local.x) <= layer.naturalW/2 && Math.abs(local.y) <= layer.naturalH/2){
+        return layer;
+      }
+    }
+    return null;
+  }
+
+  // attached once to #stage (which persists across buildStage() rebuilds, unlike its
+  // children) — clicking any layer's visible area selects it (topmost wins on overlap)
+  // and immediately starts dragging it, same as the old per-selected-layer guide rect did.
+  function attachStageSelectAndDrag(){
+    stage.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0 || !bg) return;
+      const stagePt = stagePointFromEvent(e);
+      const hit = hitTestLayerAt(stagePt);
+      if (!hit) return;
+      e.preventDefault();
+      if (hit.id !== selectedLayerId) selectLayer(hit.id);
+      const start = stagePt;
+      const startCx = hit.xform.cx, startCy = hit.xform.cy;
+      function move(ev){
+        const cur = stagePointFromEvent(ev);
+        hit.xform.cx = startCx + (cur.x - start.x);
+        hit.xform.cy = startCy + (cur.y - start.y);
+        updateSelectedLayerTransform();
+      }
+      function up(){
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+      }
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+    });
+  }
+  attachStageSelectAndDrag();
 
   // ---- dragging: resize (corner handles, attached once) ----
   function attachCornerHandle(id){
@@ -1443,17 +1588,18 @@
   }
   ["handle-tl","handle-tr","handle-br","handle-bl"].forEach(attachCornerHandle);
 
-  // ---- dragging: stretch/smoosh a single side (non-uniform resize, shape layers only) ----
-  // moving one edge grows/shrinks that dimension by the pointer's movement along that edge's
-  // local axis, while the opposite edge stays put — the layer's center shifts by half the
-  // change to keep the fixed edge fixed, matching typical "resize handle" behavior.
-  const MIN_SHAPE_SIZE = 4;
+  // ---- dragging: stretch/smoosh a single side (non-uniform resize, shape and image ----
+  // layers) ---- moving one edge grows/shrinks that dimension by the pointer's movement
+  // along that edge's local axis, while the opposite edge stays put — the layer's center
+  // shifts by half the change to keep the fixed edge fixed, matching typical "resize
+  // handle" behavior.
+  const MIN_STRETCH_SIZE = 4;
   function attachEdgeHandle(id, dim, sign){
     const el = document.getElementById(id);
     el.addEventListener("pointerdown", (e) => {
       if (e.button !== 0) return;
       const selected = getSelectedLayer();
-      if (!selected || selected.type !== "shape") return;
+      if (!selected || (selected.type !== "shape" && selected.type !== "image")) return;
       e.preventDefault();
       e.stopPropagation();
       const start = stagePointFromEvent(e);
@@ -1466,7 +1612,7 @@
         const cur = stagePointFromEvent(ev);
         const dProj = ((cur.x - start.x) * axis.x + (cur.y - start.y) * axis.y) / scale;
         const startSize = dim === "w" ? startW : startH;
-        const newSize = Math.max(MIN_SHAPE_SIZE, startSize + sign * dProj);
+        const newSize = Math.max(MIN_STRETCH_SIZE, startSize + sign * dProj);
         const appliedDelta = sign * (newSize - startSize);
         if (dim === "w") selected.naturalW = newSize; else selected.naturalH = newSize;
         const centerShift = appliedDelta / 2;
@@ -1709,6 +1855,18 @@
 
     syncColorControls();
     syncOpacityControl();
+    syncImageControls();
+  }
+
+  function syncImageControls(){
+    const selected = getSelectedLayer();
+    const isImage = !!selected && selected.type === "image";
+    imageFieldsGroup.style.display = isImage ? "" : "none";
+    if (!isImage) return;
+    restoreOriginalBtn.style.display = selected.originalDataURL ? "" : "none";
+    removeBgBtn.textContent = "Remove background";
+    removeBgBtn.disabled = false;
+    removeBgStatus.textContent = "";
   }
 
   function addTextLayer(){
@@ -1782,6 +1940,8 @@
             name: file.name || ("Layer " + layerIdCounter),
             naturalW: tmp.naturalWidth || 300,
             naturalH: tmp.naturalHeight || 300,
+            origNaturalW: tmp.naturalWidth || 300,
+            origNaturalH: tmp.naturalHeight || 300,
             dataURL,
             opacity: 100,
             xform: { cx:0, cy:0, scale:1, rot:0 },
@@ -1837,11 +1997,181 @@
     dropzone.classList.remove("dragover");
     addImageFiles(e.dataTransfer && e.dataTransfer.files);
   });
-  // prevent the browser from navigating away if a file is dropped outside the dropzone
+  // prevent the browser from navigating away if a file is dropped outside a dropzone
   ["dragover","drop"].forEach((evt) => {
     window.addEventListener(evt, (e) => {
-      if (e.target !== dropzone && !dropzone.contains(e.target)) e.preventDefault();
+      const inDropzone = dropzone.contains(e.target) || projectZipDropzone.contains(e.target);
+      if (!inDropzone) e.preventDefault();
     });
+  });
+
+  // ---- background removal (runs fully client-side: U2NETP ONNX model via onnxruntime-web wasm) ----
+  // model is fetched from Hugging Face's CDN rather than vendored in this repo — it's a 4.5MB
+  // binary, and HF's file CDN sends proper CORS headers (unlike GitHub release assets, which
+  // don't). This mirror is byte-for-byte identical to the canonical rembg-distributed u2netp.onnx
+  // (sha256 309c8469258dda742793dce0ebea8e6dd393174f89934733ecc8b14c76f4ddd8), verified 2026-08-27.
+  const BG_REMOVAL_MODEL_URL = "https://huggingface.co/Heliosoph/u2net-onnx/resolve/main/u2netp.onnx";
+  const ORT_CDN_BASE = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.27.0/dist/";
+  let ortLoadPromise = null;
+  let bgRemovalSessionPromise = null;
+
+  function loadOrt(){
+    if (window.ort) return Promise.resolve(window.ort);
+    if (!ortLoadPromise){
+      ortLoadPromise = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = ORT_CDN_BASE + "ort.min.js";
+        script.onload = () => {
+          window.ort.env.wasm.wasmPaths = ORT_CDN_BASE;
+          resolve(window.ort);
+        };
+        script.onerror = () => reject(new Error("Couldn't load the background removal engine."));
+        document.head.appendChild(script);
+      });
+    }
+    return ortLoadPromise;
+  }
+
+  function getBgRemovalSession(){
+    if (!bgRemovalSessionPromise){
+      bgRemovalSessionPromise = loadOrt()
+        .then((ort) => ort.InferenceSession.create(BG_REMOVAL_MODEL_URL))
+        .catch((err) => { bgRemovalSessionPromise = null; throw err; });
+    }
+    return bgRemovalSessionPromise;
+  }
+
+  // Mirrors the U2NETP pre/post-processing used by the "rembg" reference implementation:
+  // resize to 320x320, scale by the image's own peak channel value (not a fixed 255),
+  // then per-channel ImageNet mean/std normalization; the mask output is min-max
+  // stretched and resized back up to the original image size to use as the alpha channel.
+  function removeBackgroundFromDataURL(dataURL){
+    return getBgRemovalSession().then((session) => new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        try{
+          const SIZE = 320;
+          const inCanvas = document.createElement("canvas");
+          inCanvas.width = SIZE; inCanvas.height = SIZE;
+          const inCtx = inCanvas.getContext("2d");
+          inCtx.imageSmoothingEnabled = true;
+          inCtx.imageSmoothingQuality = "high";
+          inCtx.drawImage(img, 0, 0, SIZE, SIZE);
+          const inData = inCtx.getImageData(0, 0, SIZE, SIZE).data;
+
+          let maxVal = 1e-6;
+          for (let i = 0; i < inData.length; i += 4){
+            if (inData[i] > maxVal) maxVal = inData[i];
+            if (inData[i+1] > maxVal) maxVal = inData[i+1];
+            if (inData[i+2] > maxVal) maxVal = inData[i+2];
+          }
+
+          const mean = [0.485, 0.456, 0.406];
+          const std = [0.229, 0.224, 0.225];
+          const plane = SIZE * SIZE;
+          const chw = new Float32Array(3 * plane);
+          for (let p = 0; p < plane; p++){
+            const o = p * 4;
+            chw[p]           = ((inData[o]   / maxVal) - mean[0]) / std[0];
+            chw[plane + p]   = ((inData[o+1] / maxVal) - mean[1]) / std[1];
+            chw[2*plane + p] = ((inData[o+2] / maxVal) - mean[2]) / std[2];
+          }
+
+          const inputName = session.inputNames[0];
+          const outputName = session.outputNames[0];
+          const tensor = new window.ort.Tensor("float32", chw, [1, 3, SIZE, SIZE]);
+
+          session.run({ [inputName]: tensor }).then((results) => {
+            const out = results[outputName].data;
+            let mi = Infinity, ma = -Infinity;
+            for (let i = 0; i < out.length; i++){
+              if (out[i] < mi) mi = out[i];
+              if (out[i] > ma) ma = out[i];
+            }
+            const range = (ma - mi) || 1e-6;
+
+            const maskCanvas = document.createElement("canvas");
+            maskCanvas.width = SIZE; maskCanvas.height = SIZE;
+            const maskCtx = maskCanvas.getContext("2d");
+            const maskImageData = maskCtx.createImageData(SIZE, SIZE);
+            for (let i = 0; i < out.length; i++){
+              const v = Math.round(((out[i] - mi) / range) * 255);
+              const o = i * 4;
+              maskImageData.data[o] = v;
+              maskImageData.data[o+1] = v;
+              maskImageData.data[o+2] = v;
+              maskImageData.data[o+3] = 255;
+            }
+            maskCtx.putImageData(maskImageData, 0, 0);
+
+            const w = img.naturalWidth, h = img.naturalHeight;
+            const maskFullCanvas = document.createElement("canvas");
+            maskFullCanvas.width = w; maskFullCanvas.height = h;
+            const maskFullCtx = maskFullCanvas.getContext("2d");
+            maskFullCtx.imageSmoothingEnabled = true;
+            maskFullCtx.imageSmoothingQuality = "high";
+            maskFullCtx.drawImage(maskCanvas, 0, 0, w, h);
+            const maskFullData = maskFullCtx.getImageData(0, 0, w, h).data;
+
+            const outCanvas = document.createElement("canvas");
+            outCanvas.width = w; outCanvas.height = h;
+            const outCtx = outCanvas.getContext("2d");
+            outCtx.drawImage(img, 0, 0, w, h);
+            const outImageData = outCtx.getImageData(0, 0, w, h);
+            const outData = outImageData.data;
+            // keep original RGB untouched; only the alpha channel comes from the mask
+            for (let i = 0; i < outData.length; i += 4){
+              outData[i+3] = maskFullData[i];
+            }
+            outCtx.putImageData(outImageData, 0, 0);
+
+            resolve(outCanvas.toDataURL("image/png"));
+          }).catch(reject);
+        } catch(err){
+          reject(err);
+        }
+      };
+      img.onerror = () => reject(new Error("Couldn't load the image for background removal."));
+      img.src = dataURL;
+    }));
+  }
+
+  resetImageSizeBtn.addEventListener("click", () => {
+    const layer = getSelectedLayer();
+    if (!layer || layer.type !== "image" || layer.origNaturalW == null) return;
+    layer.naturalW = layer.origNaturalW;
+    layer.naturalH = layer.origNaturalH;
+    buildStage();
+  });
+
+  removeBgBtn.addEventListener("click", () => {
+    const layer = getSelectedLayer();
+    if (!layer || layer.type !== "image") return;
+    removeBgBtn.disabled = true;
+    removeBgBtn.textContent = "Removing background…";
+    removeBgStatus.textContent = "First run downloads a small AI model (a few MB) — this can take a moment.";
+    removeBackgroundFromDataURL(layer.dataURL).then((newDataURL) => {
+      if (!layer.originalDataURL) layer.originalDataURL = layer.dataURL;
+      layer.dataURL = newDataURL;
+      buildStage();
+      syncImageControls();
+      removeBgStatus.textContent = "Background removed.";
+    }).catch((err) => {
+      console.error(err);
+      removeBgBtn.disabled = false;
+      removeBgBtn.textContent = "Remove background";
+      removeBgStatus.textContent = "";
+      alert("Couldn't remove the background from this image. " + (err && err.message ? err.message : ""));
+    });
+  });
+
+  restoreOriginalBtn.addEventListener("click", () => {
+    const layer = getSelectedLayer();
+    if (!layer || !layer.originalDataURL) return;
+    layer.dataURL = layer.originalDataURL;
+    delete layer.originalDataURL;
+    buildStage();
+    syncImageControls();
   });
 
   // ---- events: text layers ----
@@ -2308,7 +2638,114 @@
     rasterizeSvgToBlob(outSvg, canvasW, canvasH, { background:null, mime:"image/png" }, cb);
   }
 
-  // ---- export: zip containing the JPG mockup, full-layers PNG, and original uploads ----
+  // ---- export: standalone PNG "asset" for a single text/shape layer (analogous to the ----
+  // ---- original file kept for an image layer), rendered unrotated/unscaled/full-opacity ----
+  // ---- at its own naturalW x naturalH so it reads as a clean, reusable asset.           ----
+  function buildSingleLayerPNGBlob(layer, cb){
+    const outSvg = document.createElementNS(NS, "svg");
+    outSvg.setAttribute("xmlns", NS);
+    outSvg.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", XLINK);
+    const hw = layer.naturalW/2, hh = layer.naturalH/2;
+    outSvg.setAttribute("viewBox", `${-hw} ${-hh} ${layer.naturalW} ${layer.naturalH}`);
+    outSvg.setAttribute("width", layer.naturalW);
+    outSvg.setAttribute("height", layer.naturalH);
+    const fontStyle = buildFontFaceDefsStyle();
+    if (fontStyle){
+      const defs = document.createElementNS(NS, "defs");
+      defs.appendChild(fontStyle);
+      outSvg.appendChild(defs);
+    }
+    outSvg.appendChild(buildLayerVisual(Object.assign({}, layer, { opacity: 100 })));
+    const longSide = Math.max(layer.naturalW, layer.naturalH, 1);
+    const exportScale = Math.max(1, Math.min(6, Math.round(1600 / longSide)));
+    const canvasW = Math.max(1, Math.round(layer.naturalW * exportScale));
+    const canvasH = Math.max(1, Math.round(layer.naturalH * exportScale));
+    rasterizeSvgToBlob(outSvg, canvasW, canvasH, { background:null, mime:"image/png" }, cb);
+  }
+
+  function layerAssetBaseName(layer){
+    if (layer.type === "image") return layer.name || `image-${layer.id}`;
+    if (layer.type === "text"){
+      const words = (layer.text || "").trim().replace(/\s+/g, " ").split(" ").slice(0, 5).join(" ");
+      return `Text - ${words || "text"}`;
+    }
+    if (layer.type === "shape") return `Shape - ${layer.shapeKind}`;
+    return `layer-${layer.id}`;
+  }
+
+  // ---- export: project.xml — position/size/rotation/stacking data for every layer, plus ----
+  // ---- which background shape was used, so the zip can be re-loaded exactly as exported. ----
+  function buildProjectXML(assetFilenames, fontFilesMap){
+    const doc = document.implementation.createDocument(null, "pmag30CustomizerProject", null);
+    const root = doc.documentElement;
+    root.setAttribute("version", "1");
+    root.setAttribute("exportedAt", new Date().toISOString());
+
+    const bgEl = doc.createElement("background");
+    bgEl.setAttribute("shape", shapeSelect.value);
+    bgEl.setAttribute("label", currentShapeLabel || "");
+    bgEl.setAttribute("levelView", String(levelView));
+    root.appendChild(bgEl);
+
+    const layersEl = doc.createElement("layers");
+    layers.forEach((layer, i) => {
+      const el = doc.createElement("layer");
+      el.setAttribute("index", String(i));
+      el.setAttribute("type", layer.type);
+      el.setAttribute("cx", String(layer.xform.cx));
+      el.setAttribute("cy", String(layer.xform.cy));
+      el.setAttribute("scale", String(layer.xform.scale));
+      el.setAttribute("rotation", String(layer.xform.rot));
+      el.setAttribute("opacity", String(layer.opacity == null ? 100 : layer.opacity));
+      el.setAttribute("naturalWidth", String(layer.naturalW));
+      el.setAttribute("naturalHeight", String(layer.naturalH));
+      const fname = assetFilenames.get(layer.id);
+      if (fname) el.setAttribute("file", "original-images/" + fname);
+
+      if (layer.type === "image"){
+        el.setAttribute("name", layer.name || "");
+        if (layer.origNaturalW != null){
+          el.setAttribute("origNaturalWidth", String(layer.origNaturalW));
+          el.setAttribute("origNaturalHeight", String(layer.origNaturalH));
+        }
+      } else if (layer.type === "shape"){
+        el.setAttribute("shapeKind", layer.shapeKind);
+        el.setAttribute("filled", String(!!layer.filled));
+        el.setAttribute("strokeWidth", String(layer.strokeWidth));
+        el.setAttribute("colorC", String(layer.color.c));
+        el.setAttribute("colorM", String(layer.color.m));
+        el.setAttribute("colorY", String(layer.color.y));
+        el.setAttribute("colorK", String(layer.color.k));
+      } else if (layer.type === "text"){
+        el.setAttribute("colorC", String(layer.color.c));
+        el.setAttribute("colorM", String(layer.color.m));
+        el.setAttribute("colorY", String(layer.color.y));
+        el.setAttribute("colorK", String(layer.color.k));
+        const isBuiltin = BUILTIN_FONTS.some((f) => f.value === layer.fontFamily);
+        if (isBuiltin){
+          el.setAttribute("fontSource", "builtin");
+          el.setAttribute("fontFamily", layer.fontFamily);
+        } else {
+          el.setAttribute("fontSource", "custom");
+          const info = fontFilesMap.get(layer.fontFamily);
+          if (info){
+            el.setAttribute("fontFile", "fonts/" + info.filename);
+            el.setAttribute("fontLabel", info.label);
+          }
+        }
+        const contentEl = doc.createElement("content");
+        contentEl.appendChild(doc.createCDATASection(layer.text || ""));
+        el.appendChild(contentEl);
+      }
+      layersEl.appendChild(el);
+    });
+    root.appendChild(layersEl);
+
+    return '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(doc);
+  }
+
+  // ---- export: zip containing the JPG mockup, full-layers PNG, a PNG of each individual ----
+  // ---- layer, project.xml (position/size/stacking + background shape), and originals    ----
   function exportZip(){
     if (!layers.length || !bg){
       alert("Add at least one image layer first.");
@@ -2333,27 +2770,65 @@
         buildFullLayersPNGBlob((pngBlob, pngErr) => {
           if (pngErr){ alert(pngErr); resetDownloadZipBtn(); return; }
 
-          const zip = new JSZip();
-          zip.file(buildExportFilename("jpg"), jpgBlob);
-          zip.file(buildExportFilename("png", "full-layers"), pngBlob);
+          const nonImageLayers = layers.filter((l) => l.type !== "image");
+          Promise.all(nonImageLayers.map((layer) => new Promise((resolve, reject) => {
+            buildSingleLayerPNGBlob(layer, (blob, err) => {
+              if (err) reject(new Error(err)); else resolve({ layer, blob });
+            });
+          }))).then((rendered) => {
+            const zip = new JSZip();
+            zip.file(buildExportFilename("jpg"), jpgBlob);
+            zip.file(buildExportFilename("png", "full-layers"), pngBlob);
 
-          const imageLayers = layers.filter((l) => l.type === "image");
-          if (imageLayers.length){
             const originalsFolder = zip.folder("original-images");
             const usedNames = new Set();
-            imageLayers.forEach((layer) => {
+            const assetFilenames = new Map(); // layer.id -> filename inside original-images/
+
+            layers.forEach((layer) => {
+              if (layer.type !== "image") return;
               const blob = dataURLtoBlob(layer.dataURL);
               let name = layer.name || `layer.${extFromMime(blob.type)}`;
               if (!/\.[a-z0-9]+$/i.test(name)) name += `.${extFromMime(blob.type)}`;
-              originalsFolder.file(uniqueZipName(usedNames, name), blob);
+              name = uniqueZipName(usedNames, name);
+              originalsFolder.file(name, blob);
+              assetFilenames.set(layer.id, name);
             });
-          }
+            rendered.forEach(({ layer, blob }) => {
+              const name = uniqueZipName(usedNames, layerAssetBaseName(layer) + ".png");
+              originalsFolder.file(name, blob);
+              assetFilenames.set(layer.id, name);
+            });
 
-          zip.generateAsync({ type: "blob" }).then((zipBlob) => {
-            triggerDownload(zipBlob, buildExportFilename("zip"));
-            resetDownloadZipBtn();
+            // custom (uploaded, non-Google) fonts actually used by a text layer
+            const fontFilesMap = new Map(); // familyName -> { filename, label }
+            const usedFontNames = new Set();
+            let fontsFolder = null;
+            layers.forEach((layer) => {
+              if (layer.type !== "text") return;
+              const isBuiltin = BUILTIN_FONTS.some((f) => f.value === layer.fontFamily);
+              if (isBuiltin || fontFilesMap.has(layer.fontFamily)) return;
+              const faces = customFonts[layer.fontFamily];
+              if (!faces || !faces.length) return;
+              if (!fontsFolder) fontsFolder = zip.folder("fonts");
+              const label = customFontLabels[layer.fontFamily] || layer.fontFamily;
+              const blob = dataURLtoBlob(faces[0].dataURL);
+              const ext = /otf/i.test(blob.type) ? "otf" : "ttf";
+              const filename = uniqueZipName(usedFontNames, layer.fontFamily.replace(/[^a-z0-9-]+/gi, "_") + "." + ext);
+              fontsFolder.file(filename, blob);
+              fontFilesMap.set(layer.fontFamily, { filename, label });
+            });
+
+            zip.file("project.xml", buildProjectXML(assetFilenames, fontFilesMap));
+
+            zip.generateAsync({ type: "blob" }).then((zipBlob) => {
+              triggerDownload(zipBlob, buildExportFilename("zip"));
+              resetDownloadZipBtn();
+            }).catch(() => {
+              alert("Export failed while creating the zip file.");
+              resetDownloadZipBtn();
+            });
           }).catch(() => {
-            alert("Export failed while creating the zip file.");
+            alert("Export failed while rendering one of the layers.");
             resetDownloadZipBtn();
           });
         });
@@ -2367,6 +2842,199 @@
   }
 
   downloadZipBtn.addEventListener("click", exportZip);
+
+  // ---- import: re-create the editor from a previously exported project zip ----
+  function mimeFromExt(path){
+    const ext = (path.split(".").pop() || "").toLowerCase();
+    const map = { png:"image/png", jpg:"image/jpeg", jpeg:"image/jpeg", gif:"image/gif", webp:"image/webp", svg:"image/svg+xml", ttf:"font/ttf", otf:"font/otf" };
+    return map[ext] || "application/octet-stream";
+  }
+
+  function zipFileToDataURL(zip, path){
+    const entry = path && zip.file(path);
+    if (!entry) return Promise.resolve(null);
+    return entry.async("base64").then((b64) => `data:${mimeFromExt(path)};base64,${b64}`);
+  }
+
+  // builds one layer object (without a runtime id) from a <layer> element of project.xml,
+  // resolving any referenced asset (image data / custom font file) out of the zip first.
+  function buildLayerFromXML(el, zip, fontImportCache){
+    const type = el.getAttribute("type");
+    const xform = {
+      cx: parseFloat(el.getAttribute("cx")) || 0,
+      cy: parseFloat(el.getAttribute("cy")) || 0,
+      scale: parseFloat(el.getAttribute("scale")) || 1,
+      rot: parseFloat(el.getAttribute("rotation")) || 0
+    };
+    const opacity = el.hasAttribute("opacity") ? parseFloat(el.getAttribute("opacity")) : 100;
+    const naturalW = parseFloat(el.getAttribute("naturalWidth")) || 10;
+    const naturalH = parseFloat(el.getAttribute("naturalHeight")) || 10;
+
+    if (type === "image"){
+      return zipFileToDataURL(zip, el.getAttribute("file")).then((dataURL) => {
+        if (!dataURL) return null;
+        const origW = el.hasAttribute("origNaturalWidth") ? parseFloat(el.getAttribute("origNaturalWidth")) : naturalW;
+        const origH = el.hasAttribute("origNaturalHeight") ? parseFloat(el.getAttribute("origNaturalHeight")) : naturalH;
+        return {
+          type: "image",
+          name: el.getAttribute("name") || "image.png",
+          naturalW, naturalH,
+          origNaturalW: origW, origNaturalH: origH,
+          dataURL,
+          opacity,
+          xform,
+          fitScale: 1
+        };
+      });
+    }
+
+    const c = parseFloat(el.getAttribute("colorC")) || 0;
+    const m = parseFloat(el.getAttribute("colorM")) || 0;
+    const y = parseFloat(el.getAttribute("colorY")) || 0;
+    const k = el.hasAttribute("colorK") ? parseFloat(el.getAttribute("colorK")) : 100;
+    const color = { c, m, y, k };
+    const fillColor = cmykToHex(c, m, y, k);
+
+    if (type === "shape"){
+      return Promise.resolve({
+        type: "shape",
+        shapeKind: el.getAttribute("shapeKind") || "rectangle",
+        filled: el.getAttribute("filled") !== "false",
+        strokeWidth: parseFloat(el.getAttribute("strokeWidth")) || 6,
+        color, fillColor,
+        opacity,
+        naturalW, naturalH,
+        xform,
+        fitScale: 1
+      });
+    }
+
+    if (type === "text"){
+      const contentEl = el.querySelector("content");
+      const layer = {
+        type: "text",
+        text: contentEl ? contentEl.textContent : "",
+        color, fillColor,
+        opacity,
+        xform,
+        fitScale: 1
+      };
+      const fontFile = el.getAttribute("fontFile");
+      if (el.getAttribute("fontSource") === "custom" && fontFile){
+        let p = fontImportCache.get(fontFile);
+        if (!p){
+          p = zipFileToDataURL(zip, fontFile).then((dataURL) => new Promise((resolve) => {
+            if (!dataURL){ resolve(BUILTIN_FONTS[0].value); return; }
+            const label = el.getAttribute("fontLabel") || "Custom font";
+            const familyName = "UserFont" + (++customFontCounter) + "-" + label.replace(/[^a-z0-9]+/gi, "").slice(0, 24);
+            registerCustomFont(familyName, dataURL);
+            addCustomFontOption(familyName, label);
+            loadFontAndThen(familyName, () => resolve(familyName));
+          }));
+          fontImportCache.set(fontFile, p);
+        }
+        return p.then((familyName) => {
+          layer.fontFamily = familyName;
+          measureTextLayer(layer);
+          return layer;
+        });
+      }
+      layer.fontFamily = el.getAttribute("fontFamily") || BUILTIN_FONTS[0].value;
+      measureTextLayer(layer);
+      return Promise.resolve(layer);
+    }
+
+    return Promise.resolve(null);
+  }
+
+  function applyImportedProject(shapeValue, wantLevelView, newLayers){
+    const shape = BUILTIN_SHAPES[shapeValue] || BUILTIN_SHAPES.left;
+    currentShapeLabel = shape.label;
+    shapeSelect.value = BUILTIN_SHAPES[shapeValue] ? shapeValue : "left";
+    parseAndLoadBackground(shape.svg);
+
+    levelView = !!wantLevelView && !levelViewCheckbox.disabled;
+    levelViewCheckbox.checked = levelView;
+
+    layers = newLayers.map((l) => {
+      l.id = ++layerIdCounter;
+      if (bg) l.fitScale = Math.max(bg.clipBBoxRect.w/l.naturalW, bg.clipBBoxRect.h/l.naturalH) || 1;
+      return l;
+    });
+    selectedLayerId = layers.length ? layers[layers.length - 1].id : null;
+
+    renderLayerList();
+    buildStage();
+    setInitialView();
+    syncZoomSlider();
+    syncRotationSlider();
+    updateControlsEnabled();
+    syncTextControls();
+  }
+
+  function importProjectZip(file){
+    if (!file) return;
+    if (layers.length && !confirm("Loading this project will replace your current layers. Continue?")) return;
+    projectZipDropzone.classList.add("dragover");
+    JSZip.loadAsync(file).then((zip) => {
+      const xmlEntry = zip.file("project.xml");
+      if (!xmlEntry) throw new Error("This zip doesn't contain a project.xml — it doesn't look like a PMAG 30 Customizer export.");
+      return xmlEntry.async("string").then((xmlText) => {
+        const doc = new DOMParser().parseFromString(xmlText, "application/xml");
+        if (doc.querySelector("parsererror")) throw new Error("Couldn't parse project.xml in that zip.");
+        const root = doc.documentElement;
+        const bgEl = root.querySelector("background");
+        const shapeValue = bgEl ? bgEl.getAttribute("shape") : null;
+        const wantLevelView = bgEl ? bgEl.getAttribute("levelView") === "true" : false;
+        const layerEls = Array.from(root.querySelectorAll("layers > layer"));
+        const fontImportCache = new Map();
+        return Promise.all(layerEls.map((el) => buildLayerFromXML(el, zip, fontImportCache)))
+          .then((newLayers) => ({ shapeValue, wantLevelView, newLayers: newLayers.filter(Boolean) }));
+      });
+    }).then(({ shapeValue, wantLevelView, newLayers }) => {
+      applyImportedProject(shapeValue, wantLevelView, newLayers);
+    }).catch((err) => {
+      console.error(err);
+      alert("Couldn't load that project zip. " + (err && err.message ? err.message : ""));
+    }).then(() => {
+      projectZipDropzone.classList.remove("dragover");
+    });
+  }
+
+  projectZipInput.addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    importProjectZip(file);
+    projectZipInput.value = "";
+  });
+
+  projectZipDropzone.addEventListener("click", () => projectZipInput.click());
+  projectZipDropzone.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " "){
+      e.preventDefault();
+      projectZipInput.click();
+    }
+  });
+  ["dragenter","dragover"].forEach((evt) => {
+    projectZipDropzone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      projectZipDropzone.classList.add("dragover");
+    });
+  });
+  ["dragleave","dragend"].forEach((evt) => {
+    projectZipDropzone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      projectZipDropzone.classList.remove("dragover");
+    });
+  });
+  projectZipDropzone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    projectZipDropzone.classList.remove("dragover");
+    const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    importProjectZip(file);
+  });
 
   // ---- init ----
   BUILTIN_FONTS.forEach((f) => {
