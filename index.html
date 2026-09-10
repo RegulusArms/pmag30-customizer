@@ -1,9 +1,65 @@
 <!DOCTYPE html>
+<!--
+==============================================================================
+
+ What the hell did you just say about viewing my source code, you little script
+ kiddie? I'll have you know I graduated somewhere around the middle of my
+ engineering class, I've participated in numerous production deployments, and I
+ have over 300 confirmed bug fixes.
+
+ I am trained in full-stack debugging and I'm the top git blame investigator on
+ my team. To me you're just another person who hit F12 and thought they found
+ something interesting. I will refactor your codebase with precision the likes
+ of which has never been seen before on this Earth. Mark my words.
+
+ You think you can inspect-element your way into my secrets? Think again,
+ compiler. As we speak I am consulting my classified collection of Stack
+ Overflow tabs and your IP is being traced through no fewer than twelve reverse
+ proxies. Prepare yourself for the storm, kid. The storm that leaves your pull
+ requests forever waiting on review.
+
+ I can code anywhere, anytime, and in over seven hundred programming languages,
+ if you count the ones I have syntax highlighting for. Not only am I extensively
+ trained in object-oriented programming, but I have access to the entire
+ standard library and I will use it to refactor your miserable repository off
+ the face of GitHub.
+
+ If only you had known what unholy retribution your innocent little F12 keypress
+ was about to unleash, perhaps you would have simply admired the website and
+ moved on. But you couldn't. You had to click "View Source."
+
+ Now your CI pipeline will fail for reasons nobody can reproduce. Your Docker
+ containers will only work on your coworker's machine. Your YAML indentation
+ will mysteriously drift. Your regex will become sentient. Every merge conflict
+ will somehow involve package-lock.json.
+
+ And as for this source code? You don't get to see the *good* stuff. This is
+ just the frontend. The real magic lives on the server, where you can't touch
+ it. Nice try though.
+
+ Remember: I graduated comfortably in the middle of my engineering class, I've
+ deployed on Fridays, debugged production with printf(), committed directly to
+ main, and lived to tell the tale.
+
+ Thanks for visiting.
+==============================================================================
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PMAG 30 Customizer</title>
+<script>
+  // set the theme before first paint so there's no flash of the wrong palette
+  (function(){
+    var theme = "dark";
+    try{
+      var saved = localStorage.getItem("pmag30CustomizerTheme");
+      if (saved === "light" || saved === "dark") theme = saved;
+    }catch(e){ /* ignore */ }
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto&family=Montserrat&family=Oswald&family=Bebas+Neue&family=Anton&family=Playfair+Display&family=Merriweather&family=Cinzel&family=Roboto+Mono&family=Dancing+Script&family=Pacifico&display=swap" rel="stylesheet">
@@ -15,6 +71,36 @@
     --text:#1f2430;
     --muted:#6b7280;
     --bg:#f4f5f7;
+    --surface:#ffffff;
+    --hover-bg:#f2f3f5;
+    --accent-tint:#eaf1fe;
+    --dropzone-hover-bg:#f7f9fc;
+    --dropzone-hover-border:#c7cbd4;
+    --dropdown-shadow:rgba(0,0,0,.14);
+    --stage-shadow-1:rgba(0,0,0,.12);
+    --stage-shadow-2:rgba(0,0,0,.08);
+    --danger:#c0392b;
+    --stage-bg:#ffffff;
+    --stage-checker:#e6e6ea;
+  }
+  html[data-theme="dark"]{
+    --panel-bg:#1c1f26;
+    --panel-border:#33363f;
+    --accent:#5b9dff;
+    --text:#e7e9ee;
+    --muted:#9aa0ac;
+    --bg:#111318;
+    --surface:#20232b;
+    --hover-bg:#2a2d36;
+    --accent-tint:#1d2c46;
+    --dropzone-hover-bg:#262a33;
+    --dropzone-hover-border:#454a56;
+    --dropdown-shadow:rgba(0,0,0,.5);
+    --stage-shadow-1:rgba(0,0,0,.4);
+    --stage-shadow-2:rgba(0,0,0,.3);
+    --danger:#e0685a;
+    --stage-bg:#2b2e35;
+    --stage-checker:#363a43;
   }
   *{box-sizing:border-box;}
   html,body{
@@ -24,9 +110,92 @@
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     color:var(--text);
   }
+  select, textarea, input[type="number"], input[type="text"]{
+    background:var(--surface);
+    color:var(--text);
+  }
+  body{
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+  }
+  .menubar{
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    height:36px;
+    background:var(--panel-bg);
+    border-bottom:1px solid var(--panel-border);
+    padding:0 6px;
+    font-size:13px;
+    position:relative;
+    z-index:100;
+    user-select:none;
+  }
+  .menu{
+    position:relative;
+  }
+  .menu-btn{
+    display:block;
+    padding:6px 12px;
+    border-radius:6px;
+    cursor:pointer;
+    background:transparent;
+    color:var(--text);
+    font:inherit;
+  }
+  .menu-btn:hover, .menu.open .menu-btn{
+    background:var(--hover-bg);
+  }
+  .menu-btn:disabled{
+    opacity:.4;
+    cursor:not-allowed;
+    background:transparent;
+  }
+  .theme-toggle-btn{
+    margin-left:auto;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:30px;
+    height:30px;
+    padding:0;
+    color:var(--muted);
+  }
+  .theme-toggle-btn svg{
+    width:17px;
+    height:17px;
+  }
+  .menu-dropdown{
+    display:none;
+    position:absolute;
+    top:100%;
+    left:0;
+    margin-top:2px;
+    min-width:200px;
+    background:var(--surface);
+    border:1px solid var(--panel-border);
+    border-radius:8px;
+    box-shadow:0 4px 16px var(--dropdown-shadow);
+    padding:6px;
+  }
+  .menu.open .menu-dropdown{
+    display:block;
+  }
+  .menu-item{
+    padding:8px 10px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:13px;
+    white-space:nowrap;
+  }
+  .menu-item:hover{
+    background:var(--hover-bg);
+  }
   .app{
     display:flex;
-    height:100vh;
+    flex:1 1 auto;
+    min-height:0;
     align-items:stretch;
   }
   .panel{
@@ -37,6 +206,10 @@
     padding:20px 18px;
     overflow-y:auto;
     min-height:0;
+  }
+  .panel-right{
+    border-right:none;
+    border-left:1px solid var(--panel-border);
   }
   .panel h1{
     font-size:17px;
@@ -88,11 +261,11 @@
     transition:background .12s ease, border-color .12s ease;
   }
   .dropzone:hover{
-    background:#f7f9fc;
-    border-color:#c7cbd4;
+    background:var(--dropzone-hover-bg);
+    border-color:var(--dropzone-hover-border);
   }
   .dropzone.dragover{
-    background:#eaf1fe;
+    background:var(--accent-tint);
     border-color:var(--accent);
     color:var(--text);
   }
@@ -105,7 +278,7 @@
     justify-content:center;
     gap:6px;
     border:1px solid var(--panel-border);
-    background:#fff;
+    background:var(--surface);
     color:var(--text);
     padding:8px 12px;
     font-size:13px;
@@ -113,7 +286,7 @@
     cursor:pointer;
     transition:background .12s ease;
   }
-  .btn:hover{background:#f2f3f5;}
+  .btn:hover{background:var(--hover-bg);}
   .btn:disabled{opacity:.45;cursor:not-allowed;}
   .btn-row{
     display:flex;
@@ -132,6 +305,24 @@
   .btn-primary:hover{background:#2f6fdb;}
   .btn-primary + .btn-primary{
     margin-top:8px;
+  }
+  .btn.active{
+    background:var(--accent);
+    color:#fff;
+    border-color:var(--accent);
+  }
+  .dropper-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:26px;
+    height:26px;
+    padding:0;
+    flex:0 0 auto;
+  }
+  .dropper-btn svg{
+    width:14px;
+    height:14px;
   }
   .checkbox-row{
     display:flex;
@@ -201,34 +392,7 @@
   .color-wheel-wrap{
     display:flex;
     justify-content:center;
-    align-items:center;
-    gap:10px;
     margin:4px 0 2px;
-  }
-  .eyedropper-btn{
-    flex:0 0 auto;
-    width:32px;
-    height:32px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    border:1px solid var(--panel-border);
-    background:#fff;
-    color:var(--text);
-    border-radius:8px;
-    cursor:pointer;
-    transition:background .12s ease, color .12s ease, border-color .12s ease;
-  }
-  .eyedropper-btn:hover{background:#f2f3f5;}
-  .eyedropper-btn.active{
-    background:var(--accent);
-    border-color:var(--accent);
-    color:#fff;
-  }
-  #stageContainer.eyedropper-mode{
-    cursor:
-      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24'><path d='M18.7 3.3a2.4 2.4 0 0 1 0 3.4l-1.6 1.6-3.4-3.4 1.6-1.6a2.4 2.4 0 0 1 3.4 0Z' fill='white' stroke='black' stroke-width='1.3'/><path d='M15.5 6.5 5 17v3.5h3.5L18 10' fill='white' stroke='black' stroke-width='1.3'/><path d='m11.5 8.5 4 4' stroke='black' stroke-width='1.3'/></svg>") 4 28,
-      crosshair;
   }
   .color-wheel{
     position:relative;
@@ -273,14 +437,14 @@
     gap:7px;
     padding:7px 8px;
     font-size:12.5px;
-    background:#fff;
+    background:var(--surface);
     border-bottom:1px solid var(--panel-border);
     cursor:pointer;
     user-select:none;
   }
   .layer-item:last-child{border-bottom:none;}
   .layer-item.active{
-    background:#eaf1fe;
+    background:var(--accent-tint);
     outline:1px solid var(--accent);
     outline-offset:-1px;
   }
@@ -309,12 +473,60 @@
     padding:2px 5px;
     border-radius:4px;
   }
-  .layer-remove:hover{background:#f2f3f5;color:#c0392b;}
+  .layer-remove:hover{background:var(--hover-bg);color:var(--danger);}
   .layer-empty{
     padding:10px 8px;
     font-size:12px;
     color:var(--muted);
     text-align:center;
+  }
+  .history-list{
+    list-style:none;
+    margin:0;
+    padding:0;
+    border:1px solid var(--panel-border);
+    border-radius:8px;
+    overflow-y:auto;
+    max-height:260px;
+  }
+  .history-item{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:6px 8px;
+    font-size:12px;
+    background:var(--surface);
+    border-bottom:1px solid var(--panel-border);
+    cursor:pointer;
+  }
+  .history-item:last-child{border-bottom:none;}
+  .history-item:hover{background:var(--hover-bg);}
+  .history-item.current{
+    background:var(--accent-tint);
+    outline:1px solid var(--accent);
+    outline-offset:-1px;
+  }
+  .history-thumb{
+    flex:0 0 auto;
+    width:30px;
+    height:44px;
+    border-radius:4px;
+    background:var(--stage-bg);
+    border:1px solid var(--panel-border);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+  }
+  .history-thumb img{
+    max-width:100%;
+    max-height:100%;
+  }
+  .history-desc{
+    flex:1 1 auto;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
   }
   .download-note{
     font-size:11.5px;
@@ -338,16 +550,20 @@
     width:100%;
     border-radius:10px;
     overflow:hidden;
-    box-shadow:0 1px 3px rgba(0,0,0,.12), 0 8px 24px rgba(0,0,0,.08);
+    box-shadow:0 1px 3px var(--stage-shadow-1), 0 8px 24px var(--stage-shadow-2);
     background-image:
-      linear-gradient(45deg, #e6e6ea 25%, transparent 25%),
-      linear-gradient(-45deg, #e6e6ea 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, #e6e6ea 75%),
-      linear-gradient(-45deg, transparent 75%, #e6e6ea 75%);
+      linear-gradient(45deg, var(--stage-checker) 25%, transparent 25%),
+      linear-gradient(-45deg, var(--stage-checker) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, var(--stage-checker) 75%),
+      linear-gradient(-45deg, transparent 75%, var(--stage-checker) 75%);
     background-size:18px 18px;
     background-position:0 0, 0 9px, 9px -9px, -9px 0px;
-    background-color:#fff;
+    background-color:var(--stage-bg);
     touch-action:none;
+  }
+  .stage-container.dragover{
+    outline:3px dashed var(--accent);
+    outline-offset:-3px;
   }
   #stage{
     display:block;
@@ -381,17 +597,11 @@
     border-color:#fff;
   }
   .handle.edge{
-    border-radius:4px;
+    width:16px;
+    height:16px;
+    border-radius:50%;
     background:var(--accent);
     border-color:#fff;
-  }
-  .handle.edge-h{
-    width:10px;
-    height:18px;
-  }
-  .handle.edge-v{
-    width:18px;
-    height:10px;
   }
   .shape-btn-grid{
     display:grid;
@@ -407,48 +617,63 @@
     text-align:center;
     max-width:420px;
   }
+  .stage-hint{
+    max-width:100%;
+  }
   @media (max-width:760px){
     .app{flex-direction:column;height:auto;min-height:100vh;}
-    .panel{width:auto;flex:none;border-right:none;border-bottom:1px solid var(--panel-border);overflow-y:visible;max-height:none;}
+    .panel{width:auto;flex:none;border-right:none;border-left:none;border-bottom:1px solid var(--panel-border);overflow-y:visible;max-height:none;}
     .stage-container{height:80vh;}
   }
 </style>
 </head>
 <body>
+<div class="menubar">
+  <div class="menu" id="fileMenu">
+    <button type="button" class="menu-btn" id="fileMenuBtn" aria-haspopup="true" aria-expanded="false">File</button>
+    <div class="menu-dropdown" id="fileMenuDropdown" role="menu">
+      <div class="menu-item" id="addImageMenuItem" role="menuitem">Add Image…</div>
+      <div class="menu-item" id="loadProjectZipMenuItem" role="menuitem">Load Project ZIP…</div>
+    </div>
+  </div>
+  <button type="button" class="menu-btn" id="saveZipMenuBtn" disabled>Save</button>
+  <button type="button" class="menu-btn theme-toggle-btn" id="themeToggleBtn" title="Switch to light theme" aria-label="Switch to light theme">
+    <svg id="themeIconMoon" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M20.5,14.2A8.5,8.5,0,1,1,9.8,3.5,7,7,0,0,0,20.5,14.2Z"></path>
+    </svg>
+    <svg id="themeIconSun" viewBox="0 0 24 24" aria-hidden="true" style="display:none;">
+      <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="4.5"></circle>
+        <path d="M12,2.5v2.5M12,19v2.5M4.6,4.6l1.8,1.8M17.6,17.6l1.8,1.8M2.5,12h2.5M19,12h2.5M4.6,19.4l1.8-1.8M17.6,6.4l1.8-1.8"></path>
+      </g>
+    </svg>
+  </button>
+</div>
 <div class="app">
   <aside class="panel">
     <h1>PMAG 30 Customizer</h1>
-    <p class="sub">Upload one or more images or add text layers, then drag to move, use the corner handles to resize, and the top handle (or shift + scroll, or the [ ] keys) to rotate. Drag the edge bubbles on an image or shape to stretch it in that direction. Layers only show through the colored area of the shape. Reorder layers by dragging them in the list below.</p>
 
     <div class="field">
-      <label for="imageInput">Add image layer</label>
-      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Drop images here or click to browse">
-        <strong>Drag &amp; drop images here</strong><br>or click to browse — multiple images each become their own layer
+      <label for="shapeSelect">Background shape</label>
+      <select id="shapeSelect" style="width:100%;padding:7px 8px;font-size:13px;border-radius:8px;border:1px solid var(--panel-border);">
+        <option value="left">PMAG 30 Left</option>
+        <option value="right">PMAG 30 Right</option>
+      </select>
+      <div class="checkbox-row" style="margin-top:8px;">
+        <input type="checkbox" id="levelViewCheckbox">
+        <label for="levelViewCheckbox" style="margin:0;font-weight:400;">Level view (bottom parallel to ground)</label>
       </div>
-      <input type="file" id="imageInput" accept="image/*" multiple style="display:none;">
-    </div>
-
-    <div class="field">
-      <label>Add text layer</label>
-      <button class="btn" id="addTextBtn" style="width:100%;">+ Add text</button>
-    </div>
-
-    <div class="field">
-      <label>Add shape layer</label>
-      <div class="shape-btn-grid">
-        <button class="btn" data-shape-kind="star">★ Star</button>
-        <button class="btn" data-shape-kind="rectangle">▭ Rectangle</button>
-        <button class="btn" data-shape-kind="square">◻ Square</button>
-        <button class="btn" data-shape-kind="ellipse">⬭ Ellipse</button>
-        <button class="btn" data-shape-kind="circle">○ Circle</button>
-        <button class="btn" data-shape-kind="line">─ Line</button>
+      <div class="btn-row" style="margin-top:8px;">
+        <button class="btn" id="previewFadeBtn" type="button">Preview edge fade</button>
+        <button class="btn" id="previewCmykBtn" type="button">Preview CMYK colors</button>
       </div>
+      <p class="hint" id="previewFadeHint" style="display:none;margin:6px 0 0;text-align:left;">Simulated preview only — shows how the outer edges fade and shift color when printed. Not included in exports.</p>
+      <p class="hint" id="previewCmykHint" style="display:none;margin:6px 0 0;text-align:left;">Simulated preview only — approximates how uploaded photos shift toward printable CMYK colors (shape/text fills are already exact CMYK, so they're unaffected). Not included in exports.</p>
     </div>
 
-    <div class="field">
-      <label>Layers</label>
-      <ul class="layer-list" id="layerList"></ul>
-    </div>
+    <hr class="sep">
+
+    <input type="file" id="imageInput" accept="image/*" multiple style="display:none;">
 
     <div class="btn-row" style="margin-bottom:18px;">
       <button class="btn" id="fitBtn" disabled>Fit to shape</button>
@@ -458,6 +683,10 @@
     <div id="imageFieldsGroup" style="display:none;margin-bottom:18px;">
       <div class="btn-row" style="margin-bottom:8px;">
         <button class="btn" id="resetImageSizeBtn" style="width:100%;">Reset size &amp; aspect ratio</button>
+      </div>
+      <div class="btn-row" style="margin-bottom:8px;">
+        <button class="btn" id="flipHorizontalBtn" type="button">Flip horizontal</button>
+        <button class="btn" id="flipVerticalBtn" type="button">Flip vertical</button>
       </div>
       <div class="btn-row">
         <button class="btn" id="removeBgBtn">Remove background</button>
@@ -481,13 +710,6 @@
       <div class="btn-row" style="margin-top:8px;">
         <button class="btn" id="rotLeftBtn" disabled>⟲ 15°</button>
         <button class="btn" id="rotRightBtn" disabled>⟳ 15°</button>
-      </div>
-    </div>
-
-    <div class="field">
-      <label for="opacityRange">Opacity <span id="opacityLabel" style="font-weight:400;color:var(--muted);">100%</span></label>
-      <div class="row">
-        <input type="range" id="opacityRange" min="0" max="100" value="100" step="1" disabled>
       </div>
     </div>
 
@@ -517,18 +739,22 @@
 
     <div id="colorFieldsGroup" style="display:none;">
       <div class="field">
-        <label>Color (CMYK)</label>
+        <label style="display:flex;align-items:center;justify-content:space-between;">
+          <span>Color (CMYK)</span>
+          <button type="button" class="btn dropper-btn" id="colorDropperBtn" title="Pick color from canvas" aria-label="Pick color from canvas">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="13.5" y="2.5" width="6" height="6" rx="1.5" transform="rotate(45 16.5 5.5)"></rect>
+                <line x1="14.5" y1="7.5" x2="6" y2="16"></line>
+              </g>
+              <circle cx="5" cy="17" r="1.7" fill="currentColor"></circle>
+            </svg>
+          </button>
+        </label>
         <div class="color-wheel-wrap">
           <div class="color-wheel" id="colorWheel" role="slider" aria-label="Color hue and saturation" tabindex="0">
             <div class="color-wheel-dot" id="colorWheelDot"></div>
           </div>
-          <button type="button" id="eyedropperBtn" class="eyedropper-btn" title="Pick a color from the artwork (Esc to cancel)" aria-label="Pick a color from the artwork" aria-pressed="false">
-            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18.7 3.3a2.4 2.4 0 0 1 0 3.4l-1.6 1.6-3.4-3.4 1.6-1.6a2.4 2.4 0 0 1 3.4 0Z"/>
-              <path d="M15.5 6.5 5 17v3.5h3.5L18 10"/>
-              <path d="m11.5 8.5 4 4"/>
-            </svg>
-          </button>
         </div>
         <div class="cmyk-row" style="margin-top:10px;">
           <label for="cmykK">K</label>
@@ -585,20 +811,6 @@
 
     <hr class="sep">
 
-    <div class="field">
-      <label for="shapeSelect">Background shape</label>
-      <select id="shapeSelect" style="width:100%;padding:7px 8px;font-size:13px;border-radius:8px;border:1px solid var(--panel-border);">
-        <option value="left">PMAG 30 Left</option>
-        <option value="right">PMAG 30 Right</option>
-      </select>
-      <div class="checkbox-row" style="margin-top:8px;">
-        <input type="checkbox" id="levelViewCheckbox">
-        <label for="levelViewCheckbox" style="margin:0;font-weight:400;">Level view (bottom parallel to ground)</label>
-      </div>
-    </div>
-
-    <hr class="sep">
-
     <button class="btn btn-primary" id="downloadZipBtn" disabled title="Downloads a zip containing the JPG mockup, the full quality PNG layers, a PNG of each individual layer, a project.xml with every layer's position/size/stacking data, and your original uploaded images — this zip can be re-loaded with &quot;Load project ZIP&quot; below">Download ZIP</button>
     <p class="download-note">Download the zip for each side of the PMAG (left and right), then email them to ross@regulusarms.com with your GunBroker order number or square order number as the subject line.</p>
 
@@ -621,15 +833,53 @@
         <div class="handle corner" id="handle-tr" style="cursor:nesw-resize;"></div>
         <div class="handle corner" id="handle-br" style="cursor:nwse-resize;"></div>
         <div class="handle corner" id="handle-bl" style="cursor:nesw-resize;"></div>
-        <div class="handle edge edge-v" id="handle-top" title="Stretch" style="cursor:ns-resize;"></div>
-        <div class="handle edge edge-v" id="handle-bottom" title="Stretch" style="cursor:ns-resize;"></div>
-        <div class="handle edge edge-h" id="handle-left" title="Stretch" style="cursor:ew-resize;"></div>
-        <div class="handle edge edge-h" id="handle-right" title="Stretch" style="cursor:ew-resize;"></div>
+        <div class="handle edge" id="handle-top" title="Stretch" style="cursor:ns-resize;"></div>
+        <div class="handle edge" id="handle-bottom" title="Stretch" style="cursor:ns-resize;"></div>
+        <div class="handle edge" id="handle-left" title="Stretch" style="cursor:ew-resize;"></div>
+        <div class="handle edge" id="handle-right" title="Stretch" style="cursor:ew-resize;"></div>
         <div class="handle rotate" id="handle-rotate" title="Rotate"></div>
       </div>
     </div>
-    <p class="hint">Add an image, drag inside the outline to move it, drag a corner to resize, or drag one of the side bubbles to stretch it in that direction. Rotate by dragging the blue dot above it, holding shift while scrolling over the image, or pressing the [ and ] keys. Scroll to zoom the workspace, or hold the middle mouse button to pan it.</p>
+    <p class="hint stage-hint">Drag &amp; drop an image onto the artboard to add it as a layer, then drag inside the outline to move it, drag a corner to resize, or drag one of the side bubbles to stretch it in that direction. Rotate by dragging the blue dot above it, holding shift while scrolling over the image, or pressing the [ and ] keys. Scroll to zoom the workspace, or hold the middle mouse button to pan it.</p>
   </main>
+
+  <aside class="panel panel-right">
+    <h1>Layers</h1>
+    <p class="sub">Reorder layers by dragging them in the list below. Click a layer to select it.</p>
+
+    <div class="field">
+      <label for="opacityRange">Opacity <span id="opacityLabel" style="font-weight:400;color:var(--muted);">100%</span></label>
+      <div class="row">
+        <input type="range" id="opacityRange" min="0" max="100" value="100" step="1" disabled>
+      </div>
+    </div>
+
+    <div class="field">
+      <ul class="layer-list" id="layerList"></ul>
+    </div>
+
+    <div class="field">
+      <label>Add text layer</label>
+      <button class="btn" id="addTextBtn" style="width:100%;">+ Add text</button>
+    </div>
+
+    <div class="field">
+      <label>Add shape layer</label>
+      <div class="shape-btn-grid">
+        <button class="btn" data-shape-kind="star">★ Star</button>
+        <button class="btn" data-shape-kind="rectangle">▭ Rectangle</button>
+        <button class="btn" data-shape-kind="square">■ Square</button>
+        <button class="btn" data-shape-kind="ellipse">⬭ Ellipse</button>
+        <button class="btn" data-shape-kind="circle">● Circle</button>
+        <button class="btn" data-shape-kind="line">— Line</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>History <span style="font-weight:400;color:var(--muted);">(Ctrl+Z to undo)</span></label>
+      <ul class="history-list" id="historyList"></ul>
+    </div>
+  </aside>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -639,6 +889,10 @@
   const NS = "http://www.w3.org/2000/svg";
   const XLINK = "http://www.w3.org/1999/xlink";
 
+  // Plain single-path magazine-panel silhouettes (no screw holes or inset "face" sub-region) —
+  // the edge-fade preview (appendEdgeFadeDefs) falls back to its generic stroked-outline
+  // approximation for shapes like these, which is exactly the case that fallback path
+  // is designed for.
   const SVG_LEFT = `<?xml version="1.0" encoding="UTF-8"?>
 <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 286.57 732.93">
   <defs>
@@ -707,14 +961,30 @@
   };
 
   // ---- state ----
-  let bg = null;              // { w, h, viewBox, bgClones, clipClones, clipBBoxRect }
+  let bg = null;              // { w, h, viewBox, bgClones, clipClones, holeCircles, edgeFaceClone, holeFadeRings, extraFadeClones, clipBBoxRect }
   let layers = [];             // [{ id, type:'image'|'text'|'shape', name, naturalW, naturalH, xform:{cx,cy,scale,rot}, fitScale, opacity, ... }]
   let selectedLayerId = null;
   let layerIdCounter = 0;
   let showGuide = true;
   let currentShapeLabel = "";
   let dragSrcLi = null;
+
+  // ---- history (undo/jump-to-state) ----
+  // a capped stack of full-state snapshots (not diffs) — simplest way to guarantee any
+  // entry can be restored exactly, at the cost of some memory; dataURL strings are shared
+  // by reference across snapshots (immutable), so only the small xform/color sub-objects
+  // are actually deep-cloned per snapshot. `historyIndex` is the currently-active entry;
+  // making a new change after jumping back drops everything past it (see pushHistoryEntry).
+  const HISTORY_MAX = 50;
+  let historyStack = [];       // [{ desc, thumbnail: dataURL|null, state:{shapeKey,levelView,layers,selectedLayerId} }]
+  let historyIndex = -1;
+  let historyBeforeSnapshot = null; // captured at the start of an in-progress drag/typing session
   let levelView = false;      // display-only: show the shape rotated so its bottom edge is level
+  let previewFadeOn = false;  // display-only: simulate the curved-edge print fade on printed panels
+  let previewCmykOn = false;  // display-only: approximate how uploaded photos shift when printed in CMYK
+  let colorSamplingActive = false;    // color dropper: hovering the stage previews a sampled color
+  let sampleCanvasCtx = null;         // 2D context of the offscreen raster snapshot used for sampling
+  let sampleCanvasScale = { x:1, y:1 }; // bg-space units -> sample canvas pixels
   const view = { scale: 1, tx: 0, ty: 0 }; // workspace pan/zoom (CSS transform on #stage, separate from layer xforms)
   const MIN_VIEW_SCALE = 0.25, MAX_VIEW_SCALE = 10;
   let customFonts = {};        // familyName -> array of {dataURL, unicodeRange}
@@ -726,16 +996,21 @@
   const stageContainer = document.getElementById("stageContainer");
   const handleLayer = document.getElementById("handleLayer");
   const imageInput = document.getElementById("imageInput");
-  const dropzone = document.getElementById("dropzone");
   const projectZipInput = document.getElementById("projectZipInput");
   const projectZipDropzone = document.getElementById("projectZipDropzone");
   const layerListEl = document.getElementById("layerList");
   const shapeSelect = document.getElementById("shapeSelect");
   const levelViewCheckbox = document.getElementById("levelViewCheckbox");
+  const previewFadeBtn = document.getElementById("previewFadeBtn");
+  const previewFadeHint = document.getElementById("previewFadeHint");
+  const previewCmykBtn = document.getElementById("previewCmykBtn");
+  const previewCmykHint = document.getElementById("previewCmykHint");
   const fitBtn = document.getElementById("fitBtn");
   const removeImgBtn = document.getElementById("removeImgBtn");
   const imageFieldsGroup = document.getElementById("imageFieldsGroup");
   const resetImageSizeBtn = document.getElementById("resetImageSizeBtn");
+  const flipHorizontalBtn = document.getElementById("flipHorizontalBtn");
+  const flipVerticalBtn = document.getElementById("flipVerticalBtn");
   const removeBgBtn = document.getElementById("removeBgBtn");
   const restoreOriginalBtn = document.getElementById("restoreOriginalBtn");
   const removeBgStatus = document.getElementById("removeBgStatus");
@@ -747,6 +1022,10 @@
   const rotRightBtn = document.getElementById("rotRightBtn");
   const guideCheckbox = document.getElementById("guideCheckbox");
   const downloadZipBtn = document.getElementById("downloadZipBtn");
+  const saveZipMenuBtn = document.getElementById("saveZipMenuBtn");
+  const themeToggleBtn = document.getElementById("themeToggleBtn");
+  const themeIconMoon = document.getElementById("themeIconMoon");
+  const themeIconSun = document.getElementById("themeIconSun");
   const addTextBtn = document.getElementById("addTextBtn");
   const textFieldsGroup = document.getElementById("textFieldsGroup");
   const textContentInput = document.getElementById("textContentInput");
@@ -765,7 +1044,7 @@
   const cmykKInput = document.getElementById("cmykKInput");
   const colorSwatch = document.getElementById("colorSwatch");
   const cmykReadout = document.getElementById("cmykReadout");
-  const eyedropperBtn = document.getElementById("eyedropperBtn");
+  const colorDropperBtn = document.getElementById("colorDropperBtn");
   const opacityRange = document.getElementById("opacityRange");
   const opacityLabel = document.getElementById("opacityLabel");
   const addShapeButtons = document.querySelectorAll("[data-shape-kind]");
@@ -776,6 +1055,7 @@
   const shapeStrokeWidthField = document.getElementById("shapeStrokeWidthField");
   const shapeStrokeWidthRange = document.getElementById("shapeStrokeWidthRange");
   const shapeStrokeWidthLabel = document.getElementById("shapeStrokeWidthLabel");
+  const historyListEl = document.getElementById("historyList");
 
   // ---- shared: which layer types use the color wheel / are colorable ----
   function isColorableLayer(layer){
@@ -785,6 +1065,241 @@
   // ---- layer helpers ----
   function getSelectedLayer(){
     return layers.find((l) => l.id === selectedLayerId) || null;
+  }
+
+  // ---- history: short human label for a layer, used in history descriptions ----
+  function layerLabel(layer){
+    if (!layer) return "layer";
+    if (layer.type === "text") return `"${(layer.text || "Text").split("\n")[0].slice(0, 20) || "Text"}"`;
+    if (layer.type === "shape") return layer.shapeKind.charAt(0).toUpperCase() + layer.shapeKind.slice(1);
+    return layer.name || "Image";
+  }
+
+  // shallow-clones a layer, deep-cloning only its small mutable sub-objects (xform/color)
+  // so history snapshots can't be mutated by later live edits — dataURL/text strings are
+  // immutable so sharing the reference across snapshots is safe and avoids duplicating
+  // potentially-large image data in memory for every history entry.
+  function cloneLayerForHistory(layer){
+    const copy = Object.assign({}, layer);
+    copy.xform = Object.assign({}, layer.xform);
+    if (layer.color) copy.color = Object.assign({}, layer.color);
+    return copy;
+  }
+
+  function serializeState(){
+    return {
+      shapeKey: shapeSelect.value,
+      levelView: !!levelView,
+      selectedLayerId,
+      layers: layers.map(cloneLayerForHistory)
+    };
+  }
+
+  function statesEqual(a, b){
+    return JSON.stringify(a) === JSON.stringify(b);
+  }
+
+  // best-effort human description of what changed between two full-state snapshots
+  function describeStateChange(before, after){
+    if (before.shapeKey !== after.shapeKey){
+      const shape = BUILTIN_SHAPES[after.shapeKey];
+      return `Changed panel to ${shape ? shape.label : after.shapeKey}`;
+    }
+    const bIds = before.layers.map((l) => l.id);
+    const aIds = after.layers.map((l) => l.id);
+    if (aIds.length > bIds.length){
+      const added = after.layers.find((l) => !bIds.includes(l.id));
+      return `Added layer ${layerLabel(added)}`;
+    }
+    if (aIds.length < bIds.length){
+      const removedId = bIds.find((id) => !aIds.includes(id));
+      const removed = before.layers.find((l) => l.id === removedId);
+      return `Removed layer ${layerLabel(removed)}`;
+    }
+    if (aIds.join(",") !== bIds.join(",")){
+      if (aIds.length === 2) return `Rearranged layers ${layerLabel(after.layers[0])}, ${layerLabel(after.layers[1])}`;
+      return "Rearranged layers";
+    }
+    for (let i = 0; i < after.layers.length; i++){
+      const a = after.layers[i];
+      const b = before.layers.find((l) => l.id === a.id);
+      if (!b) continue;
+      if (a.xform.cx !== b.xform.cx || a.xform.cy !== b.xform.cy) return `Moved layer ${layerLabel(a)}`;
+      if (a.xform.scale !== b.xform.scale || a.naturalW !== b.naturalW || a.naturalH !== b.naturalH) return `Resized layer ${layerLabel(a)}`;
+      if (a.xform.rot !== b.xform.rot) return `Rotated layer ${layerLabel(a)}`;
+      if (a.opacity !== b.opacity) return `Changed opacity of layer ${layerLabel(a)}`;
+      if (JSON.stringify(a.color) !== JSON.stringify(b.color)) return `Changed color of layer ${layerLabel(a)}`;
+      if (a.type === "text" && a.text !== b.text) return `Edited text of layer ${layerLabel(a)}`;
+      if (a.type === "text" && a.fontFamily !== b.fontFamily) return `Changed font of layer ${layerLabel(a)}`;
+      if (a.type === "shape" && (a.shapeKind !== b.shapeKind || a.filled !== b.filled || a.strokeWidth !== b.strokeWidth)) return `Changed style of layer ${layerLabel(a)}`;
+      if (a.type === "image" && (a.dataURL !== b.dataURL || a.flipX !== b.flipX || a.flipY !== b.flipY)) return `Edited image ${layerLabel(a)}`;
+    }
+    return "Edited artboard";
+  }
+
+  // renders a small offscreen raster of the current #stage so history entries can show a
+  // preview without re-embedding full-resolution layer images per entry (see below).
+  function rasterizeThumbnail(cb){
+    try{
+      const clone = stage.cloneNode(true);
+      const guide = clone.querySelector("#guideGroup");
+      if (guide) guide.remove();
+      // strip embedded @font-face rules (can be 1MB+ once every Google Font is warmed) —
+      // exact font rendering is imperceptible at thumbnail scale, and large data URIs here
+      // were observed to silently fail to rasterize onto the canvas (blank output) despite
+      // the <img> reporting a successful load with correct intrinsic dimensions.
+      clone.querySelectorAll("style").forEach((s) => s.remove());
+      clone.removeAttribute("id");
+      // the live stage carries an inline CSS transform for the workspace pan/zoom view —
+      // meaningless (and badly misplacing) once rendered standalone at thumbnail size
+      clone.removeAttribute("style");
+      const w = (bg && bg.w) || 200, h = (bg && bg.h) || 300;
+      const THUMB_W = 96;
+      const THUMB_H = Math.max(1, Math.round(THUMB_W * h / w));
+      clone.setAttribute("width", String(THUMB_W));
+      clone.setAttribute("height", String(THUMB_H));
+      const xml = new XMLSerializer().serializeToString(clone);
+      const svg64 = btoa(unescape(encodeURIComponent(xml)));
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = THUMB_W; canvas.height = THUMB_H;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, THUMB_W, THUMB_H);
+        try{ cb(canvas.toDataURL("image/png")); }catch(e){ cb(null); }
+      };
+      img.onerror = () => cb(null);
+      img.src = "data:image/svg+xml;base64," + svg64;
+    }catch(e){ cb(null); }
+  }
+
+  function pushHistoryEntry(desc, afterState){
+    historyStack = historyStack.slice(0, historyIndex + 1);
+    const entry = { desc, thumbnail: null, state: afterState };
+    historyStack.push(entry);
+    if (historyStack.length > HISTORY_MAX) historyStack.shift();
+    historyIndex = historyStack.length - 1;
+    rasterizeThumbnail((dataUrl) => {
+      entry.thumbnail = dataUrl;
+      renderHistoryPanel();
+    });
+    renderHistoryPanel();
+  }
+
+  // records a discrete, one-shot change (button click, select/checkbox change) — always
+  // pushes since these handlers only run when a real change actually happened.
+  function recordHistory(desc){
+    pushHistoryEntry(desc, serializeState());
+  }
+
+  // for continuous interactions (drag, slider, typing): call beginHistoryChange() once at
+  // the start of the interaction and commitHistoryChange() once it ends, so intermediate
+  // steps don't each get their own entry. Idempotent — a nested/duplicate begin is a no-op,
+  // so overlapping interactions still commit against the correct "before" state.
+  function beginHistoryChange(){
+    if (historyBeforeSnapshot) return;
+    historyBeforeSnapshot = serializeState();
+  }
+  function commitHistoryChange(describeFn){
+    if (!historyBeforeSnapshot) return;
+    const before = historyBeforeSnapshot;
+    historyBeforeSnapshot = null;
+    const after = serializeState();
+    if (statesEqual(before, after)) return;
+    const desc = typeof describeFn === "function" ? describeFn() : (describeFn || describeStateChange(before, after));
+    pushHistoryEntry(desc, after);
+  }
+
+  function restoreState(state){
+    const needsBgReload = shapeSelect.value !== state.shapeKey && BUILTIN_SHAPES[state.shapeKey];
+    layers = state.layers.map(cloneLayerForHistory);
+    selectedLayerId = state.selectedLayerId;
+    levelView = !!state.levelView;
+    levelViewCheckbox.checked = levelView;
+    if (needsBgReload){
+      const shape = BUILTIN_SHAPES[state.shapeKey];
+      shapeSelect.value = state.shapeKey;
+      currentShapeLabel = shape.label;
+      updatePreviewFadeUI();
+      parseAndLoadBackground(shape.svg); // this calls buildStage() itself
+    } else {
+      buildStage();
+    }
+    renderLayerList();
+    syncZoomSlider();
+    syncRotationSlider();
+    updateControlsEnabled();
+    syncTextControls();
+  }
+
+  function goToHistory(index){
+    if (index < 0 || index >= historyStack.length || index === historyIndex) return;
+    restoreState(historyStack[index].state);
+    historyIndex = index;
+    renderHistoryPanel();
+  }
+
+  function undoOneStep(){
+    if (historyIndex > 0) goToHistory(historyIndex - 1);
+  }
+
+  // resets history to a single starting entry — used on first load and after importing a
+  // project zip that doesn't carry its own <history> section (older exports).
+  function resetHistoryForFreshLoad(desc){
+    historyStack = [];
+    historyIndex = -1;
+    pushHistoryEntry(desc, serializeState());
+  }
+
+  // updates the Start entry's own state instead of pushing a new one — used when the
+  // background shape changes while history is still sitting at Start (index 0), so idly
+  // trying out background panels before making any real edit doesn't clutter the history list.
+  // Any entries past Start are dropped too, since they no longer follow from this Start.
+  function updateStartEntry(){
+    historyStack = historyStack.slice(0, 1);
+    const entry = historyStack[0];
+    entry.state = serializeState();
+    entry.thumbnail = null;
+    rasterizeThumbnail((dataUrl) => {
+      entry.thumbnail = dataUrl;
+      renderHistoryPanel();
+    });
+    renderHistoryPanel();
+  }
+
+  function renderHistoryPanel(){
+    if (!historyListEl) return;
+    historyListEl.innerHTML = "";
+    if (!historyStack.length){
+      const empty = document.createElement("div");
+      empty.className = "layer-empty";
+      empty.textContent = "No history yet.";
+      historyListEl.appendChild(empty);
+      return;
+    }
+    historyStack.forEach((entry, i) => {
+      const li = document.createElement("li");
+      li.className = "history-item" + (i === historyIndex ? " current" : "");
+
+      const thumbWrap = document.createElement("span");
+      thumbWrap.className = "history-thumb";
+      if (entry.thumbnail){
+        const img = document.createElement("img");
+        img.src = entry.thumbnail;
+        img.alt = "";
+        thumbWrap.appendChild(img);
+      }
+      li.appendChild(thumbWrap);
+
+      const desc = document.createElement("span");
+      desc.className = "history-desc";
+      desc.textContent = entry.desc;
+      li.appendChild(desc);
+
+      li.addEventListener("click", () => goToHistory(i));
+      historyListEl.appendChild(li);
+      if (i === historyIndex) li.scrollIntoView({ block: "nearest" });
+    });
   }
 
   function transformString(xform){
@@ -870,11 +1385,12 @@
   }
 
   [cmykCInput, cmykMInput, cmykYInput, cmykKInput].forEach((input) => {
-    input.addEventListener("input", applyCmykFromInputs);
+    input.addEventListener("input", () => { beginHistoryChange(); applyCmykFromInputs(); });
     input.addEventListener("change", () => {
       const clamp = (v) => Math.max(0, Math.min(100, isNaN(v) ? 0 : v));
       input.value = clamp(parseFloat(input.value));
       applyCmykFromInputs();
+      commitHistoryChange(() => `Changed color of layer ${layerLabel(getSelectedLayer())}`);
     });
   });
 
@@ -902,6 +1418,102 @@
     let hue = Math.atan2(dx, -dy) * 180 / Math.PI;
     if (hue < 0) hue += 360;
     return { hue, sat };
+  }
+
+  // ---- color dropper: sample a pixel from the rendered canvas and feed it back into ----
+  // ---- the same hue/sat-wheel-plus-K-slider model the color wheel itself uses, so    ----
+  // ---- the result can be fine-tuned normally afterward.                              ----
+  function rgbToWheelState(r, g, b){
+    const k = 1 - Math.max(r, g, b);
+    let hue = 0, sat = 0;
+    if (k < 0.999){
+      const inv = 1 - k;
+      const hsv = rgbToHsv(r / inv, g / inv, b / inv);
+      hue = hsv.h; sat = hsv.s;
+    }
+    return { hue, sat, k: Math.max(0, Math.min(100, k * 100)) };
+  }
+
+  // renders a fresh, unrotated snapshot of exactly what's visible inside the shape
+  // (background fill + clipped layer stack) into an offscreen canvas that pixels can be
+  // read back from — the same composite buildJPGBlob() rasterizes for export.
+  function startColorSampling(){
+    const selected = getSelectedLayer();
+    if (!isColorableLayer(selected) || !bg) return;
+    colorSamplingActive = true;
+    sampleCanvasCtx = null;
+    colorDropperBtn.classList.add("active");
+    stageContainer.style.cursor = "crosshair";
+
+    const outSvg = buildClippedLayersSvg();
+    const svgString = new XMLSerializer().serializeToString(outSvg);
+    let svg64;
+    try{
+      svg64 = btoa(unescape(encodeURIComponent(svgString)));
+    }catch(e){
+      exitColorSampling(true);
+      return;
+    }
+    const dataUrl = "data:image/svg+xml;base64," + svg64;
+    const longSide = Math.max(bg.w, bg.h);
+    const scale = Math.max(1, Math.min(8, Math.round(2000 / longSide)));
+    const canvasW = Math.max(1, Math.round(bg.w * scale));
+    const canvasH = Math.max(1, Math.round(bg.h * scale));
+
+    const im = new Image();
+    im.onload = () => {
+      if (!colorSamplingActive) return; // cancelled while the snapshot was loading
+      const canvas = document.createElement("canvas");
+      canvas.width = canvasW;
+      canvas.height = canvasH;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(im, 0, 0, canvasW, canvasH);
+      sampleCanvasCtx = ctx;
+      sampleCanvasScale = { x: canvasW / bg.w, y: canvasH / bg.h };
+    };
+    im.onerror = () => exitColorSampling(true);
+    im.src = dataUrl;
+  }
+
+  function exitColorSampling(restore){
+    colorSamplingActive = false;
+    sampleCanvasCtx = null;
+    colorDropperBtn.classList.remove("active");
+    stageContainer.style.cursor = "";
+    if (restore) syncColorControls(); // undo any live preview, back to the layer's real color
+  }
+
+  // reads the pixel under the pointer and previews it on the wheel/readout; on commit it's
+  // written into the selected layer's actual color and sampling mode exits.
+  function sampleColorAt(evt, commit){
+    if (!sampleCanvasCtx) return;
+    const p = stagePointFromEvent(evt);
+    const px = Math.floor(p.x * sampleCanvasScale.x);
+    const py = Math.floor(p.y * sampleCanvasScale.y);
+    const canvas = sampleCanvasCtx.canvas;
+    if (px < 0 || py < 0 || px >= canvas.width || py >= canvas.height) return;
+    const data = sampleCanvasCtx.getImageData(px, py, 1, 1).data;
+    if (data[3] === 0) return; // nothing painted there - leave the preview as-is
+
+    const state = rgbToWheelState(data[0]/255, data[1]/255, data[2]/255);
+    const rgbPure = hsvToRgb(state.hue, state.sat, 1);
+    const c = (1 - rgbPure.r) * 100, m = (1 - rgbPure.g) * 100, y = (1 - rgbPure.b) * 100, k = state.k;
+    const fillColor = cmykToHex(c, m, y, k);
+
+    positionWheelDot(state.hue, state.sat);
+    cmykK.value = k;
+    cmykKVal.textContent = Math.round(k) + "%";
+    updateColorReadout({ color: { c, m, y, k }, fillColor });
+
+    if (commit){
+      const selected = getSelectedLayer();
+      if (isColorableLayer(selected)){
+        selected.color = { c, m, y, k };
+        selected.fillColor = fillColor;
+        buildStage();
+      }
+      exitColorSampling(false);
+    }
   }
 
   function createTextElement(layer){
@@ -1143,14 +1755,39 @@
   // finds the convex-hull edge that reads as the shape's "bottom edge" (long, in the
   // bottom half of the shape, already close to horizontal) and returns an SVG transform
   // that rotates the shape level around it, then scales it to keep it fully in view.
+  // Finds the hull edge that should become the level "floor" when rotated horizontal, by
+  // scoring each hull edge on how long it is and how close to the bottom it sits (once
+  // *its own* angle is leveled) and keeping the best. That scoring assumes the panel is
+  // already drawn close to upright — so first estimate the shape's own long axis via PCA
+  // over the hull and coarsely pre-rotate to vertical, putting any panel into roughly the
+  // same "already upright" starting condition before the edge search below runs.
   function computeLevelTransform(points, bbox, w, h){
     if (points.length < 3) return null;
     const hull = convexHull(points);
     if (hull.length < 2) return null;
-    const bboxH = bbox.y2 - bbox.y;
+    const pivot = { x: (bbox.x + bbox.x2) / 2, y: (bbox.y + bbox.y2) / 2 };
+
+    let sxx = 0, syy = 0, sxy = 0;
+    hull.forEach((p) => {
+      const dx = p.x - pivot.x, dy = p.y - pivot.y;
+      sxx += dx * dx; syy += dy * dy; sxy += dx * dy;
+    });
+    const majorAxisDeg = 0.5 * Math.atan2(2 * sxy, sxx - syy) * 180 / Math.PI; // hull's long-axis angle from horizontal
+    let preRotation = 90 - majorAxisDeg; // rotates that long axis to vertical
+    preRotation = ((preRotation + 90) % 180 + 180) % 180 - 90; // normalize to (-90, 90]
+    const preRad = preRotation * Math.PI / 180;
+    const preCos = Math.cos(preRad), preSin = Math.sin(preRad);
+    const coarseHull = hull.map((p) => ({
+      x: pivot.x + (p.x - pivot.x) * preCos - (p.y - pivot.y) * preSin,
+      y: pivot.y + (p.x - pivot.x) * preSin + (p.y - pivot.y) * preCos
+    }));
+    let cby = Infinity, cby2 = -Infinity;
+    coarseHull.forEach((p) => { cby = Math.min(cby, p.y); cby2 = Math.max(cby2, p.y); });
+    const coarseBboxH = cby2 - cby;
+
     let best = null;
-    for (let i = 0; i < hull.length; i++){
-      const p1 = hull[i], p2 = hull[(i + 1) % hull.length];
+    for (let i = 0; i < coarseHull.length; i++){
+      const p1 = coarseHull[i], p2 = coarseHull[(i + 1) % coarseHull.length];
       const dx = p2.x - p1.x, dy = p2.y - p1.y;
       const len = Math.hypot(dx, dy);
       if (len < 1) continue;
@@ -1158,15 +1795,17 @@
       if (angleDeg > 90) angleDeg -= 180;
       if (angleDeg < -90) angleDeg += 180;
       const midY = (p1.y + p2.y) / 2;
-      if (Math.abs(angleDeg) > 35) continue;          // not "slightly" tilted - skip
-      if (midY < bbox.y + bboxH * 0.5) continue;       // not in the bottom half - skip
-      const score = len + (midY - bbox.y);
+      if (Math.abs(angleDeg) > 35) continue;          // not "slightly" tilted (once upright) - skip
+      if (midY < cby + coarseBboxH * 0.5) continue;    // not in the bottom half - skip
+      const score = len + (midY - cby);
       if (!best || score > best.score) best = { angleDeg, score };
     }
-    if (!best || Math.abs(best.angleDeg) < 0.5) return null;
+    if (!best) return null;
 
-    const angle = -best.angleDeg;
-    const pivot = { x: (bbox.x + bbox.x2) / 2, y: (bbox.y + bbox.y2) / 2 };
+    // the coarse pre-rotation and the fine per-edge correction share the same pivot, so
+    // they compose into a single rotation by simple addition.
+    const angle = preRotation - best.angleDeg;
+    if (Math.abs(angle) < 0.5) return null;
     const rad = angle * Math.PI / 180;
     const cos = Math.cos(rad), sin = Math.sin(rad);
     let rx = Infinity, ry = Infinity, rx2 = -Infinity, ry2 = -Infinity;
@@ -1239,8 +1878,50 @@
     const clipClones = [];
     let clipBBox = null;
     const hullPoints = [];
+    // an optional invisible "face" reference shape marking the inset flat-face region of
+    // a panel, as opposed to its outer edge band — used only to precisely mask the
+    // "preview edge fade" effect, never rendered or counted toward the print clip.
+    let edgeFaceClone = null;
+    // optional invisible marker circles giving the outer radius of an edge-fade ring
+    // around a screw hole — the artwork's actual (smaller) hole radius is already
+    // recovered from holeCircles below, so together these define each ring's inner/outer
+    // bounds for appendEdgeFadeDefs.
+    const holeFadeRings = [];
+    // optional invisible extra fade-zone shapes — small dark features that are part of
+    // the fade family but sit inside the face region, so they'd otherwise be masked out
+    // along with the rest of it; added back into the fade mask as-is (no inner cutout,
+    // unlike hole rings) by appendEdgeFadeDefs.
+    const extraFadeClones = [];
 
     allShapes.forEach((el) => {
+      const role = el.getAttribute("data-role");
+      if (role === "edge-face"){
+        if (!edgeFaceClone){
+          edgeFaceClone = el.cloneNode(false);
+          edgeFaceClone.removeAttribute("class");
+          edgeFaceClone.removeAttribute("style");
+          edgeFaceClone.removeAttribute("fill");
+          edgeFaceClone.removeAttribute("data-role");
+        }
+        return;
+      }
+      if (role === "hole-fade-ring"){
+        holeFadeRings.push({
+          cx: parseFloat(el.getAttribute("cx")) || 0,
+          cy: parseFloat(el.getAttribute("cy")) || 0,
+          r: parseFloat(el.getAttribute("r")) || 0
+        });
+        return;
+      }
+      if (role === "fade-extra"){
+        const clone = el.cloneNode(false);
+        clone.removeAttribute("class");
+        clone.removeAttribute("style");
+        clone.removeAttribute("fill");
+        clone.removeAttribute("data-role");
+        extraFadeClones.push(clone);
+        return;
+      }
       let cs;
       try{ cs = getComputedStyle(el); }catch(e){ cs = null; }
       const fill = cs ? cs.fill : el.getAttribute("fill");
@@ -1294,6 +1975,40 @@
       }
     });
 
+    // detect small closed sub-paths (screw holes / cutouts) within any compound <path>,
+    // by splitting its "d" on each M/m and measuring the resulting sub-path's own bbox —
+    // used later to keep the edge-fade preview off of hole boundaries.
+    const holeCircles = [];
+    allShapes.forEach((el) => {
+      if (el.tagName.toLowerCase() !== "path") return;
+      const d = el.getAttribute("d");
+      if (!d) return;
+      const subpaths = d.match(/[Mm][^Mm]*/g);
+      if (!subpaths || subpaths.length < 2) return;
+      const subInfos = subpaths.map((sub) => {
+        const tmp = document.createElementNS(NS, "path");
+        tmp.setAttribute("d", sub);
+        liveSvg.appendChild(tmp);
+        let bb = null;
+        try{ bb = tmp.getBBox(); }catch(e){ /* ignore */ }
+        liveSvg.removeChild(tmp);
+        return (bb && bb.width > 0 && bb.height > 0) ? { bb, area: bb.width * bb.height } : null;
+      }).filter(Boolean);
+      if (subInfos.length < 2) return;
+      subInfos.sort((a, b) => b.area - a.area);
+      const mainArea = subInfos[0].area;
+      for (let i = 1; i < subInfos.length; i++){
+        const info = subInfos[i];
+        if (info.area < mainArea * 0.25){
+          holeCircles.push({
+            cx: info.bb.x + info.bb.width / 2,
+            cy: info.bb.y + info.bb.height / 2,
+            r: Math.max(info.bb.width, info.bb.height) / 2
+          });
+        }
+      }
+    });
+
     document.body.removeChild(hidden);
 
     if (!clipBBox){
@@ -1312,7 +2027,7 @@
 
     bg = {
       w, h, viewBox: vb,
-      bgClones, clipClones,
+      bgClones, clipClones, holeCircles, edgeFaceClone, holeFadeRings, extraFadeClones,
       clipBBoxRect: { x:clipBBox.x, y:clipBBox.y, w:clipBBox.x2-clipBBox.x, h:clipBBox.y2-clipBBox.y },
       levelTransform: computeLevelTransform(hullPoints, clipBBox, w, h)
     };
@@ -1335,6 +2050,267 @@
     layer.xform = { cx: cbb.x + cbb.w/2, cy: cbb.y + cbb.h/2, scale: fitScale, rot: 0 };
   }
 
+  // ---- preview-only "edge fade" simulation: printed panels wrap around a curved frame, ----
+  // ---- so the outer ~2-3mm of the edges print with reduced ink density and slight      ----
+  // ---- warping. This is a live-preview effect only (an SVG filter applied to the       ----
+  // ---- on-screen layer stack) — it never touches the export paths                      ----
+  // ---- (buildClippedLayersSvg / buildFullLayersSvg), which stay unaffected.             ----
+  function isFadeEligibleShape(){
+    return ["left", "right"].includes(shapeSelect.value);
+  }
+
+  function updatePreviewFadeUI(){
+    const eligible = isFadeEligibleShape();
+    if (!eligible && previewFadeOn) previewFadeOn = false;
+    previewFadeBtn.disabled = !eligible;
+    previewFadeBtn.classList.toggle("active", previewFadeOn);
+    previewFadeBtn.textContent = previewFadeOn ? "Preview edge fade: ON" : "Preview edge fade";
+    // previewFadeHint is kept in the DOM (see its markup) but stays hidden — no longer
+    // shown in the UI, per request.
+  }
+
+  // ---- preview-only "CMYK colors" simulation: approximates how uploaded photos (plain  ----
+  // ---- RGB, no CMYK ground truth) will shift once printed — reduced saturation plus a   ----
+  // ---- touch of gamma darkening, mimicking CMYK's narrower gamut and ink dot gain versus ----
+  // ---- an emissive RGB screen. Shape/text layers are already authored directly in CMYK   ----
+  // ---- (their fill is computed from the user's C/M/Y/K values via cmykToHex), so this    ----
+  // ---- preview leaves them untouched — applying it there would double-process an already-----
+  // ---- accurate color. Display-only, like edge fade: never applied to exports.           ----
+  function updatePreviewCmykUI(){
+    previewCmykBtn.classList.toggle("active", previewCmykOn);
+    previewCmykBtn.textContent = previewCmykOn ? "Preview CMYK colors: ON" : "Preview CMYK colors";
+    // previewCmykHint is kept in the DOM (see its markup) but stays hidden — no longer
+    // shown in the UI, per request.
+  }
+
+  function appendCmykPreviewDefs(defs){
+    const filter = document.createElementNS(NS, "filter");
+    filter.id = "cmykPreviewFilter";
+    filter.setAttribute("color-interpolation-filters", "sRGB");
+
+    const saturate = document.createElementNS(NS, "feColorMatrix");
+    saturate.setAttribute("type", "saturate");
+    saturate.setAttribute("values", "0.62");
+    saturate.setAttribute("result", "desaturated");
+    filter.appendChild(saturate);
+
+    // a gamma > 1 darkens midtones, and the linear term caps how bright/dark anything can
+    // get — a stand-in for ink dot gain and paper never reflecting as much light as a
+    // backlit screen, which together are most of why printed photos read as "flatter".
+    const gamma = document.createElementNS(NS, "feComponentTransfer");
+    gamma.setAttribute("in", "desaturated");
+    ["feFuncR", "feFuncG", "feFuncB"].forEach((tag) => {
+      const fn = document.createElementNS(NS, tag);
+      fn.setAttribute("type", "gamma");
+      fn.setAttribute("amplitude", "1");
+      fn.setAttribute("exponent", "1.35");
+      fn.setAttribute("offset", "0");
+      gamma.appendChild(fn);
+    });
+    filter.appendChild(gamma);
+
+    const contrast = document.createElementNS(NS, "feComponentTransfer");
+    ["feFuncR", "feFuncG", "feFuncB"].forEach((tag) => {
+      const fn = document.createElementNS(NS, tag);
+      fn.setAttribute("type", "linear");
+      fn.setAttribute("slope", "0.9");
+      fn.setAttribute("intercept", "0.04");
+      contrast.appendChild(fn);
+    });
+    filter.appendChild(contrast);
+
+    defs.appendChild(filter);
+  }
+
+  // Builds the pieces (in `defs`) needed to render a second, distorted copy of the layer
+  // stack that's only visible in a band hugging the panel's true edge. When the loaded
+  // shape carries a precise `edgeFaceClone` (see parseAndLoadBackground) — the artwork's
+  // real inset "face" region — the band is the exact ring between the panel's outer
+  // silhouette and that face region, so it follows the actual dark edge area drawn in the
+  // source artwork, holes and all. Shapes without that reference (like the plain PMAG
+  // silhouettes) fall back to approximating the band by stroking the outline itself,
+  // gated to the left/right portions of the bounding box only, with detected cutouts
+  // explicitly punched out of the gate so the band never wraps around them.
+  // `edgeFadeMask` is what a caller applies (via mask="url(#edgeFadeMask)") to the
+  // distorted overlay copy; `edgeFadeDistortFilter` is the warp/lighten filter for that
+  // same copy.
+  function appendEdgeFadeDefs(defs, bg){
+    const cbb = bg.clipBBoxRect;
+    const FADE_MM = 4.5;
+    // prefer the selected panel's own measured length; fall back to a generic ~5in
+    // assumption for shapes we don't have a real measurement for.
+    const shapeDef = BUILTIN_SHAPES[shapeSelect.value];
+    const REF_PANEL_LENGTH_MM = (shapeDef && shapeDef.refLengthMM) || 127;
+    const scaleUnitsPerMM = cbb.h / REF_PANEL_LENGTH_MM;
+    let fadeUnits = scaleUnitsPerMM * FADE_MM;
+    fadeUnits = Math.min(fadeUnits, cbb.w * 0.35);
+
+    // region generously covers the outline plus room for the warp filter's overshoot
+    const M = fadeUnits * 2.5 + 4;
+    const rx = cbb.x - M, ry = cbb.y - M, rw = cbb.w + 2 * M, rh = cbb.h + 2 * M;
+
+    const edgeMask = document.createElementNS(NS, "mask");
+    edgeMask.id = "edgeFadeMask";
+    edgeMask.setAttribute("maskUnits", "userSpaceOnUse");
+    edgeMask.setAttribute("x", String(rx)); edgeMask.setAttribute("y", String(ry));
+    edgeMask.setAttribute("width", String(rw)); edgeMask.setAttribute("height", String(rh));
+
+    if (bg.edgeFaceClone){
+      // precise ring: the panel's real silhouette (screw holes already cut into its own
+      // geometry) in white, with the inset face region subtracted in black on top —
+      // leaves exactly the true dark edge band from the artwork, however it wraps.
+      bg.clipClones.forEach((c) => {
+        const clone = c.cloneNode(true);
+        clone.removeAttribute("stroke");
+        clone.setAttribute("fill", "#ffffff");
+        edgeMask.appendChild(clone);
+      });
+      const faceClone = bg.edgeFaceClone.cloneNode(true);
+      faceClone.setAttribute("fill", "#000000");
+      edgeMask.appendChild(faceClone);
+
+      // some panels also carry an edge-fade ring around each screw hole (the artwork's
+      // dark annulus between the hole's actual cutout and the surrounding face) — add
+      // each ring back into the mask: a white circle at the ring's outer radius, then a
+      // black circle at the hole's own (smaller) radius to keep the real cutout excluded.
+      (bg.holeFadeRings || []).forEach((ring) => {
+        const hole = (bg.holeCircles || []).reduce((best, h) => {
+          const d = Math.hypot(h.cx - ring.cx, h.cy - ring.cy);
+          return (!best || d < best.d) ? { hole: h, d } : best;
+        }, null);
+        const outer = document.createElementNS(NS, "circle");
+        outer.setAttribute("cx", String(ring.cx));
+        outer.setAttribute("cy", String(ring.cy));
+        outer.setAttribute("r", String(ring.r));
+        outer.setAttribute("fill", "#ffffff");
+        edgeMask.appendChild(outer);
+        if (hole){
+          const inner = document.createElementNS(NS, "circle");
+          inner.setAttribute("cx", String(hole.hole.cx));
+          inner.setAttribute("cy", String(hole.hole.cy));
+          inner.setAttribute("r", String(hole.hole.r));
+          inner.setAttribute("fill", "#000000");
+          edgeMask.appendChild(inner);
+        }
+      });
+
+      // extra small fade-zone features (a bevel/groove line etc.) that fall inside the
+      // face region — add them back into the mask as-is, on top of the face subtraction.
+      (bg.extraFadeClones || []).forEach((c) => {
+        const clone = c.cloneNode(true);
+        clone.removeAttribute("stroke");
+        clone.setAttribute("fill", "#ffffff");
+        edgeMask.appendChild(clone);
+      });
+    } else {
+      const ribbonWidth = fadeUnits * 2; // stroked centered on the outline; only the inward half survives (clipped to the true silhouette below)
+
+      // coarse left/right-only gate (excludes screw holes and top/bottom caps near the
+      // horizontal center of the bounding box)
+      const INCLUDE_PCT = 40;
+      const grad = document.createElementNS(NS, "linearGradient");
+      grad.id = "edgeFadeXGrad";
+      grad.setAttribute("x1", "0"); grad.setAttribute("x2", "1");
+      grad.setAttribute("y1", "0"); grad.setAttribute("y2", "0");
+      [[0, true], [INCLUDE_PCT, false], [100 - INCLUDE_PCT, false], [100, true]].forEach(([offset, white]) => {
+        const stop = document.createElementNS(NS, "stop");
+        stop.setAttribute("offset", offset + "%");
+        stop.setAttribute("stop-color", white ? "#ffffff" : "#000000");
+        grad.appendChild(stop);
+      });
+      defs.appendChild(grad);
+
+      const xMask = document.createElementNS(NS, "mask");
+      xMask.id = "edgeFadeXMask";
+      xMask.setAttribute("maskUnits", "userSpaceOnUse");
+      xMask.setAttribute("x", String(rx)); xMask.setAttribute("y", String(ry));
+      xMask.setAttribute("width", String(rw)); xMask.setAttribute("height", String(rh));
+      const xMaskRect = document.createElementNS(NS, "rect");
+      xMaskRect.setAttribute("x", String(cbb.x));
+      xMaskRect.setAttribute("y", String(cbb.y));
+      xMaskRect.setAttribute("width", String(cbb.w));
+      xMaskRect.setAttribute("height", String(cbb.h));
+      xMaskRect.setAttribute("fill", "url(#edgeFadeXGrad)");
+      xMask.appendChild(xMaskRect);
+      // punch out a hole-shaped exclusion around each detected cutout (screw holes etc.) so
+      // the fade band never wraps around them, regardless of how close they sit to the edge
+      (bg.holeCircles || []).forEach((hole) => {
+        const cutout = document.createElementNS(NS, "circle");
+        cutout.setAttribute("cx", String(hole.cx));
+        cutout.setAttribute("cy", String(hole.cy));
+        cutout.setAttribute("r", String(hole.r + fadeUnits + 2));
+        cutout.setAttribute("fill", "#000000");
+        xMask.appendChild(cutout);
+      });
+      defs.appendChild(xMask);
+
+      // the outline itself, stroked in place — this is what makes the band follow the
+      // panel's real taper/curvature at every point instead of a fixed vertical line. The
+      // clip-path (the app's real silhouette) keeps only the inward half of the stroke, and
+      // the x-gate mask restricts it to the left/right portions of the outline.
+      const silhouetteG = document.createElementNS(NS, "g");
+      silhouetteG.setAttribute("clip-path", "url(#userClip)");
+      const gatedG = document.createElementNS(NS, "g");
+      gatedG.setAttribute("mask", "url(#edgeFadeXMask)");
+      bg.clipClones.forEach((c) => {
+        const clone = c.cloneNode(true);
+        clone.setAttribute("fill", "none");
+        clone.setAttribute("stroke", "#ffffff");
+        clone.setAttribute("stroke-width", String(ribbonWidth));
+        clone.setAttribute("stroke-linejoin", "round");
+        gatedG.appendChild(clone);
+      });
+      silhouetteG.appendChild(gatedG);
+      edgeMask.appendChild(silhouetteG);
+    }
+    defs.appendChild(edgeMask);
+
+    // warp + lighten/desaturate filter applied to the (masked) distorted overlay copy
+    const filter = document.createElementNS(NS, "filter");
+    filter.id = "edgeFadeDistortFilter";
+    filter.setAttribute("x", "-40%"); filter.setAttribute("y", "-30%");
+    filter.setAttribute("width", "180%"); filter.setAttribute("height", "160%");
+    filter.setAttribute("color-interpolation-filters", "sRGB");
+
+    const turbulence = document.createElementNS(NS, "feTurbulence");
+    turbulence.setAttribute("type", "fractalNoise");
+    turbulence.setAttribute("baseFrequency", "0.9 0.05");
+    turbulence.setAttribute("numOctaves", "2");
+    turbulence.setAttribute("seed", "7");
+    turbulence.setAttribute("result", "noise");
+    filter.appendChild(turbulence);
+
+    const displace = document.createElementNS(NS, "feDisplacementMap");
+    displace.setAttribute("in", "SourceGraphic");
+    displace.setAttribute("in2", "noise");
+    displace.setAttribute("scale", String(Math.max(2, fadeUnits * 0.9)));
+    displace.setAttribute("xChannelSelector", "R");
+    displace.setAttribute("yChannelSelector", "G");
+    displace.setAttribute("result", "displaced");
+    filter.appendChild(displace);
+
+    const blur = document.createElementNS(NS, "feGaussianBlur");
+    blur.setAttribute("in", "displaced");
+    blur.setAttribute("stdDeviation", String(Math.max(0.5, fadeUnits * 0.35)));
+    blur.setAttribute("result", "blurred");
+    filter.appendChild(blur);
+
+    // lighten + pull each channel toward the others (desaturate) to read as reduced,
+    // grayed-out ink density — a stylized stand-in for CMYK dot gain loss on a curve.
+    const fadeMatrix = document.createElementNS(NS, "feColorMatrix");
+    fadeMatrix.setAttribute("in", "blurred");
+    fadeMatrix.setAttribute("type", "matrix");
+    fadeMatrix.setAttribute("values",
+      "0.72 0.14 0.10 0 0.16 " +
+      "0.10 0.72 0.14 0 0.16 " +
+      "0.14 0.10 0.72 0 0.16 " +
+      "0    0    0    1 0"
+    );
+    filter.appendChild(fadeMatrix);
+
+    defs.appendChild(filter);
+  }
+
   // ---- building the visible stage ----
   function buildStage(){
     stage.innerHTML = "";
@@ -1349,6 +2325,9 @@
     defs.appendChild(clipPath);
     const fontStyle = buildFontFaceDefsStyle();
     if (fontStyle) defs.appendChild(fontStyle);
+    const fadePreviewActive = previewFadeOn && isFadeEligibleShape();
+    if (fadePreviewActive) appendEdgeFadeDefs(defs, bg);
+    if (previewCmykOn) appendCmykPreviewDefs(defs);
     stage.appendChild(defs);
 
     // everything below is nested in levelGroup so the optional "level view" rotation
@@ -1365,7 +2344,7 @@
 
     const clipG = document.createElementNS(NS, "g");
     clipG.setAttribute("clip-path", "url(#userClip)");
-    // invisible backstop so a pointerdown anywhere within the visible/clipped shape area
+    // invisible backstop so a pointerdown anywhere within the visible/clipped panel area
     // reaches our click-to-select handler, even over empty spots between layers.
     const hitCatcher = document.createElementNS(NS, "rect");
     hitCatcher.setAttribute("x", "0");
@@ -1380,9 +2359,24 @@
       const layerG = document.createElementNS(NS, "g");
       layerG.id = "layerGroup-" + layer.id;
       layerG.setAttribute("transform", transformString(layer.xform));
-      layerG.appendChild(buildLayerVisual(layer));
+      layerG.appendChild(buildLayerVisual(layer, previewCmykOn && layer.type === "image"));
       clipG.appendChild(layerG);
     });
+
+    // preview-only: a second, distorted copy of the same layers, visible only within the
+    // edge-fade band (see appendEdgeFadeDefs) — drawn on top of the sharp layers above.
+    if (fadePreviewActive){
+      const fadeOverlay = document.createElementNS(NS, "g");
+      fadeOverlay.setAttribute("filter", "url(#edgeFadeDistortFilter)");
+      fadeOverlay.setAttribute("mask", "url(#edgeFadeMask)");
+      layers.forEach((layer) => {
+        const layerG = document.createElementNS(NS, "g");
+        layerG.setAttribute("transform", transformString(layer.xform));
+        layerG.appendChild(buildLayerVisual(layer, previewCmykOn && layer.type === "image"));
+        fadeOverlay.appendChild(layerG);
+      });
+      clipG.appendChild(fadeOverlay);
+    }
     levelGroup.appendChild(clipG);
 
     const selected = getSelectedLayer();
@@ -1573,6 +2567,7 @@
       if (!hit) return;
       e.preventDefault();
       if (hit.id !== selectedLayerId) selectLayer(hit.id);
+      beginHistoryChange();
       const start = stagePt;
       const startCx = hit.xform.cx, startCy = hit.xform.cy;
       function move(ev){
@@ -1584,6 +2579,7 @@
       function up(){
         window.removeEventListener("pointermove", move);
         window.removeEventListener("pointerup", up);
+        commitHistoryChange(() => `Moved layer ${layerLabel(hit)}`);
       }
       window.addEventListener("pointermove", move);
       window.addEventListener("pointerup", up);
@@ -1600,6 +2596,7 @@
       if (!selected) return;
       e.preventDefault();
       e.stopPropagation();
+      beginHistoryChange();
       const start = stagePointFromEvent(e);
       const dx0 = start.x - selected.xform.cx, dy0 = start.y - selected.xform.cy;
       const startDist = Math.hypot(dx0, dy0) || 0.0001;
@@ -1616,6 +2613,7 @@
       function up(){
         window.removeEventListener("pointermove", move);
         window.removeEventListener("pointerup", up);
+        commitHistoryChange(() => `Resized layer ${layerLabel(selected)}`);
       }
       window.addEventListener("pointermove", move);
       window.addEventListener("pointerup", up);
@@ -1637,6 +2635,7 @@
       if (!selected || (selected.type !== "shape" && selected.type !== "image")) return;
       e.preventDefault();
       e.stopPropagation();
+      beginHistoryChange();
       const start = stagePointFromEvent(e);
       const rad = selected.xform.rot * Math.PI / 180;
       const axis = dim === "w" ? { x: Math.cos(rad), y: Math.sin(rad) } : { x: -Math.sin(rad), y: Math.cos(rad) };
@@ -1658,6 +2657,7 @@
       function up(){
         window.removeEventListener("pointermove", move);
         window.removeEventListener("pointerup", up);
+        commitHistoryChange(() => `Resized layer ${layerLabel(selected)}`);
       }
       window.addEventListener("pointermove", move);
       window.addEventListener("pointerup", up);
@@ -1677,6 +2677,7 @@
       if (!selected) return;
       e.preventDefault();
       e.stopPropagation();
+      beginHistoryChange();
       const start = stagePointFromEvent(e);
       const startAngle = Math.atan2(start.y - selected.xform.cy, start.x - selected.xform.cx) * 180/Math.PI;
       const startRot = selected.xform.rot;
@@ -1690,6 +2691,7 @@
       function up(){
         window.removeEventListener("pointermove", move);
         window.removeEventListener("pointerup", up);
+        commitHistoryChange(() => `Rotated layer ${layerLabel(selected)}`);
       }
       window.addEventListener("pointermove", move);
       window.addEventListener("pointerup", up);
@@ -1733,6 +2735,7 @@
     rotRightBtn.disabled = !hasSelection;
     opacityRange.disabled = !hasSelection;
     downloadZipBtn.disabled = !hasLayers;
+    saveZipMenuBtn.disabled = !hasLayers;
   }
 
   // ---- layer list UI ----
@@ -1761,7 +2764,7 @@
       const name = document.createElement("span");
       name.className = "layer-name";
       if (layer.type === "text"){
-        name.textContent = "🄰 " + ((layer.text || "Text").split("\n")[0].slice(0, 24) || "Text");
+        name.textContent = "🔤 " + ((layer.text || "Text").split("\n")[0].slice(0, 24) || "Text");
       } else if (layer.type === "shape"){
         const kindLabel = layer.shapeKind.charAt(0).toUpperCase() + layer.shapeKind.slice(1);
         name.textContent = "🔷 " + kindLabel;
@@ -1784,6 +2787,7 @@
       li.addEventListener("click", () => selectLayer(layer.id));
 
       li.addEventListener("dragstart", (e) => {
+        beginHistoryChange();
         dragSrcLi = li;
         li.classList.add("dragging");
         e.dataTransfer.effectAllowed = "move";
@@ -1810,6 +2814,7 @@
           .map((id) => layers.find((l) => String(l.id) === id))
           .filter(Boolean);
         buildStage();
+        commitHistoryChange();
       });
 
       layerListEl.appendChild(li);
@@ -1828,14 +2833,12 @@
 
   function removeLayer(id){
     const removedIndex = layers.findIndex((l) => l.id === id);
+    if (removedIndex === -1) return;
+    const removedLabel = layerLabel(layers[removedIndex]);
     layers = layers.filter((l) => l.id !== id);
     if (selectedLayerId === id){
-      if (layers.length){
-        const nextIndex = Math.min(removedIndex, layers.length - 1);
-        selectedLayerId = layers[nextIndex].id;
-      } else {
-        selectedLayerId = null;
-      }
+      const nextIndex = Math.min(removedIndex, layers.length - 1);
+      selectedLayerId = nextIndex >= 0 ? layers[nextIndex].id : null;
     }
     renderLayerList();
     buildStage();
@@ -1843,6 +2846,7 @@
     syncRotationSlider();
     updateControlsEnabled();
     syncTextControls();
+    recordHistory(`Removed layer ${removedLabel}`);
   }
 
   // ---- per-layer-type controls: populate the panel from the selected layer, or hide it ----
@@ -1857,7 +2861,10 @@
     const selected = getSelectedLayer();
     const colorable = isColorableLayer(selected);
     colorFieldsGroup.style.display = colorable ? "" : "none";
-    if (!colorable) return;
+    if (!colorable){
+      if (colorSamplingActive) exitColorSampling(false); // nothing colorable to sample into anymore
+      return;
+    }
     const rgb = { r: 1 - selected.color.c/100, g: 1 - selected.color.m/100, b: 1 - selected.color.y/100 };
     const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
     positionWheelDot(hsv.h, hsv.s);
@@ -1898,6 +2905,8 @@
     const isImage = !!selected && selected.type === "image";
     imageFieldsGroup.style.display = isImage ? "" : "none";
     if (!isImage) return;
+    flipHorizontalBtn.classList.toggle("active", !!selected.flipX);
+    flipVerticalBtn.classList.toggle("active", !!selected.flipY);
     restoreOriginalBtn.style.display = selected.originalDataURL ? "" : "none";
     removeBgBtn.textContent = "Remove background";
     removeBgBtn.disabled = false;
@@ -1929,6 +2938,7 @@
     syncTextControls();
     textContentInput.focus();
     textContentInput.select();
+    recordHistory(`Added layer ${layerLabel(layer)}`);
   }
 
   function addShapeLayer(kind){
@@ -1957,6 +2967,7 @@
     syncRotationSlider();
     updateControlsEnabled();
     syncTextControls();
+    recordHistory(`Added layer ${layerLabel(layer)}`);
   }
 
   // ---- events: image upload (adds one layer per selected file) ----
@@ -1965,38 +2976,98 @@
     if (!files.length) return;
     files.forEach((file) => {
       const reader = new FileReader();
-      reader.onload = (ev) => {
-        const dataURL = ev.target.result;
-        const tmp = new Image();
-        tmp.onload = () => {
-          const layer = {
-            id: ++layerIdCounter,
-            type: "image",
-            name: file.name || ("Layer " + layerIdCounter),
-            naturalW: tmp.naturalWidth || 300,
-            naturalH: tmp.naturalHeight || 300,
-            origNaturalW: tmp.naturalWidth || 300,
-            origNaturalH: tmp.naturalHeight || 300,
-            dataURL,
-            opacity: 100,
-            xform: { cx:0, cy:0, scale:1, rot:0 },
-            fitScale: 1
-          };
-          layers.push(layer);
-          if (bg) fitTransform(layer);
-          selectedLayerId = layer.id;
-          renderLayerList();
-          buildStage();
-          syncZoomSlider();
-          syncRotationSlider();
-          updateControlsEnabled();
-          syncTextControls();
-        };
-        tmp.onerror = () => alert("Couldn't read " + (file.name || "that image") + ".");
-        tmp.src = dataURL;
-      };
+      reader.onload = (ev) => loadImageLayer(file, ev.target.result);
       reader.onerror = () => alert("Couldn't read " + (file.name || "that file") + ".");
       reader.readAsDataURL(file);
+    });
+  }
+
+  function finishImageLayer(file, dataURL, tmp){
+    const layer = {
+      id: ++layerIdCounter,
+      type: "image",
+      name: file.name || ("Layer " + layerIdCounter),
+      naturalW: tmp.naturalWidth || 300,
+      naturalH: tmp.naturalHeight || 300,
+      origNaturalW: tmp.naturalWidth || 300,
+      origNaturalH: tmp.naturalHeight || 300,
+      dataURL,
+      opacity: 100,
+      xform: { cx:0, cy:0, scale:1, rot:0 },
+      fitScale: 1
+    };
+    layers.push(layer);
+    if (bg) fitTransform(layer);
+    selectedLayerId = layer.id;
+    renderLayerList();
+    buildStage();
+    syncZoomSlider();
+    syncRotationSlider();
+    updateControlsEnabled();
+    syncTextControls();
+    recordHistory(`Added layer ${layerLabel(layer)}`);
+  }
+
+  // Some CMYK/YCCK-color JPEGs (common in print-ready art exported from
+  // Photoshop/Illustrator) fail to decode via the native <img> decoder in
+  // Chromium-based browsers (Chrome, Brave) even though Firefox reads them
+  // fine. Retry those through a pure-JS decoder before giving up.
+  function loadImageLayer(file, dataURL){
+    const tmp = new Image();
+    tmp.onload = () => finishImageLayer(file, dataURL, tmp);
+    tmp.onerror = () => {
+      const looksLikeJpeg = file.type === "image/jpeg" || /\.jpe?g$/i.test(file.name || "");
+      if (!looksLikeJpeg){
+        alert("Couldn't read " + (file.name || "that image") + ".");
+        return;
+      }
+      decodeJpegFallback(file).then((pngDataURL) => {
+        const tmp2 = new Image();
+        tmp2.onload = () => finishImageLayer(file, pngDataURL, tmp2);
+        tmp2.onerror = () => alert("Couldn't read " + (file.name || "that image") + ".");
+        tmp2.src = pngDataURL;
+      }).catch(() => {
+        alert("Couldn't read " + (file.name || "that image") + ". It may be a CMYK-color JPEG that this browser can't open — try re-saving it as RGB, or open it in Firefox.");
+      });
+    };
+    tmp.src = dataURL;
+  }
+
+  const JPEG_JS_CDN_URL = "https://cdn.jsdelivr.net/npm/jpeg-js@0.4.4/lib/decoder.js";
+  let jpegJsLoadPromise = null;
+
+  function loadJpegJs(){
+    if (window["jpeg-js"]) return Promise.resolve(window["jpeg-js"]);
+    if (!jpegJsLoadPromise){
+      jpegJsLoadPromise = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = JPEG_JS_CDN_URL;
+        script.onload = () => resolve(window["jpeg-js"]);
+        script.onerror = () => reject(new Error("Couldn't load the JPEG fallback decoder."));
+        document.head.appendChild(script);
+      });
+    }
+    return jpegJsLoadPromise;
+  }
+
+  function decodeJpegFallback(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        loadJpegJs().then((jpegJs) => {
+          const bytes = new Uint8Array(ev.target.result);
+          const raw = jpegJs.decode(bytes, { useTArray: true, formatAsRGBA: true });
+          const canvas = document.createElement("canvas");
+          canvas.width = raw.width;
+          canvas.height = raw.height;
+          const ctx = canvas.getContext("2d");
+          const imageData = new ImageData(new Uint8ClampedArray(raw.data), raw.width, raw.height);
+          ctx.putImageData(imageData, 0, 0);
+          resolve(canvas.toDataURL("image/png"));
+        }).catch(reject);
+      };
+      reader.onerror = () => reject(new Error("Couldn't read " + (file.name || "that file") + "."));
+      reader.readAsArrayBuffer(file);
     });
   }
 
@@ -2005,47 +3076,40 @@
     imageInput.value = "";
   });
 
-  dropzone.addEventListener("click", () => imageInput.click());
-  dropzone.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === " "){
-      e.preventDefault();
-      imageInput.click();
-    }
-  });
+  // ---- drop images directly on the artboard to add them as layers ----
   ["dragenter","dragover"].forEach((evt) => {
-    dropzone.addEventListener(evt, (e) => {
+    stageContainer.addEventListener(evt, (e) => {
+      if (!e.dataTransfer || !Array.from(e.dataTransfer.types || []).includes("Files")) return;
       e.preventDefault();
       e.stopPropagation();
-      dropzone.classList.add("dragover");
+      stageContainer.classList.add("dragover");
     });
   });
   ["dragleave","dragend"].forEach((evt) => {
-    dropzone.addEventListener(evt, (e) => {
+    stageContainer.addEventListener(evt, (e) => {
       e.preventDefault();
       e.stopPropagation();
-      dropzone.classList.remove("dragover");
+      stageContainer.classList.remove("dragover");
     });
   });
-  dropzone.addEventListener("drop", (e) => {
+  stageContainer.addEventListener("drop", (e) => {
+    if (!e.dataTransfer || !Array.from(e.dataTransfer.types || []).includes("Files")) return;
     e.preventDefault();
     e.stopPropagation();
-    dropzone.classList.remove("dragover");
-    addImageFiles(e.dataTransfer && e.dataTransfer.files);
+    stageContainer.classList.remove("dragover");
+    addImageFiles(e.dataTransfer.files);
   });
+
   // prevent the browser from navigating away if a file is dropped outside a dropzone
   ["dragover","drop"].forEach((evt) => {
     window.addEventListener(evt, (e) => {
-      const inDropzone = dropzone.contains(e.target) || projectZipDropzone.contains(e.target);
+      const inDropzone = projectZipDropzone.contains(e.target) || stageContainer.contains(e.target);
       if (!inDropzone) e.preventDefault();
     });
   });
 
   // ---- background removal (runs fully client-side: U2NETP ONNX model via onnxruntime-web wasm) ----
-  // model is fetched from Hugging Face's CDN rather than vendored in this repo — it's a 4.5MB
-  // binary, and HF's file CDN sends proper CORS headers (unlike GitHub release assets, which
-  // don't). This mirror is byte-for-byte identical to the canonical rembg-distributed u2netp.onnx
-  // (sha256 309c8469258dda742793dce0ebea8e6dd393174f89934733ecc8b14c76f4ddd8), verified 2026-08-27.
-  const BG_REMOVAL_MODEL_URL = "https://huggingface.co/Heliosoph/u2net-onnx/resolve/main/u2netp.onnx";
+  const BG_REMOVAL_MODEL_URL = "assets/models/u2netp.onnx";
   const ORT_CDN_BASE = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.27.0/dist/";
   let ortLoadPromise = null;
   let bgRemovalSessionPromise = null;
@@ -2177,6 +3241,25 @@
     layer.naturalW = layer.origNaturalW;
     layer.naturalH = layer.origNaturalH;
     buildStage();
+    recordHistory(`Resized layer ${layerLabel(layer)}`);
+  });
+
+  flipHorizontalBtn.addEventListener("click", () => {
+    const layer = getSelectedLayer();
+    if (!layer || layer.type !== "image") return;
+    layer.flipX = !layer.flipX;
+    buildStage();
+    syncImageControls();
+    recordHistory(`Edited image ${layerLabel(layer)}`);
+  });
+
+  flipVerticalBtn.addEventListener("click", () => {
+    const layer = getSelectedLayer();
+    if (!layer || layer.type !== "image") return;
+    layer.flipY = !layer.flipY;
+    buildStage();
+    syncImageControls();
+    recordHistory(`Edited image ${layerLabel(layer)}`);
   });
 
   removeBgBtn.addEventListener("click", () => {
@@ -2191,6 +3274,7 @@
       buildStage();
       syncImageControls();
       removeBgStatus.textContent = "Background removed.";
+      recordHistory(`Edited image ${layerLabel(layer)}`);
     }).catch((err) => {
       console.error(err);
       removeBgBtn.disabled = false;
@@ -2207,6 +3291,7 @@
     delete layer.originalDataURL;
     buildStage();
     syncImageControls();
+    recordHistory(`Edited image ${layerLabel(layer)}`);
   });
 
   // ---- events: text layers ----
@@ -2215,10 +3300,14 @@
   textContentInput.addEventListener("input", () => {
     const selected = getSelectedLayer();
     if (!selected || selected.type !== "text") return;
+    beginHistoryChange();
     selected.text = textContentInput.value;
     measureTextLayer(selected);
     buildStage();
     renderLayerList();
+  });
+  textContentInput.addEventListener("change", () => {
+    commitHistoryChange(() => `Edited text of layer ${layerLabel(getSelectedLayer())}`);
   });
 
   fontSelect.addEventListener("change", () => {
@@ -2232,6 +3321,7 @@
     selected.fontFamily = fontSelect.value;
     measureTextLayer(selected);
     buildStage();
+    recordHistory(`Changed font of layer ${layerLabel(selected)}`);
   });
 
   fontFileInput.addEventListener("change", (e) => {
@@ -2252,6 +3342,7 @@
           fontSelect.value = familyName;
           measureTextLayer(selected);
           buildStage();
+          recordHistory(`Changed font of layer ${layerLabel(selected)}`);
         }
       });
     };
@@ -2263,6 +3354,7 @@
     const selected = getSelectedLayer();
     if (!isColorableLayer(selected)) return;
     e.preventDefault();
+    beginHistoryChange();
     colorWheel.setPointerCapture(e.pointerId);
     const apply = (ev) => {
       const { hue, sat } = wheelPointFromEvent(ev);
@@ -2275,6 +3367,7 @@
       colorWheel.removeEventListener("pointermove", move);
       colorWheel.removeEventListener("pointerup", up);
       colorWheel.removeEventListener("pointercancel", up);
+      commitHistoryChange(() => `Changed color of layer ${layerLabel(selected)}`);
     }
     colorWheel.addEventListener("pointermove", move);
     colorWheel.addEventListener("pointerup", up);
@@ -2284,6 +3377,7 @@
   cmykK.addEventListener("input", () => {
     const selected = getSelectedLayer();
     if (!isColorableLayer(selected)) return;
+    beginHistoryChange();
     const k = parseFloat(cmykK.value);
     selected.color.k = k;
     selected.fillColor = cmykToHex(selected.color.c, selected.color.m, selected.color.y, k);
@@ -2291,135 +3385,64 @@
     updateColorReadout(selected);
     buildStage();
   });
+  cmykK.addEventListener("change", () => {
+    commitHistoryChange(() => `Changed color of layer ${layerLabel(getSelectedLayer())}`);
+  });
 
-  // ---- eyedropper: sample a color straight off the artwork on the stage ----
-  let eyedropperActive = false;
-  let eyedropperSnapshot = null; // { canvas, ctx, scaleX, scaleY }
-  let eyedropperPrevColor = null;
+  // ---- events: color dropper ----
+  colorDropperBtn.addEventListener("click", () => {
+    if (colorSamplingActive){ exitColorSampling(true); return; }
+    startColorSampling();
+  });
 
-  function buildEyedropperSnapshot(){
-    if (!bg) return null;
-    const scale = Math.max(1, Math.min(4, 1200 / Math.max(bg.w, bg.h)));
-    const w = Math.max(1, Math.round(bg.w * scale));
-    const h = Math.max(1, Math.round(bg.h * scale));
-    // clone + strip the live pan/zoom CSS transform (workspace view.tx/ty/scale, set by
-    // applyViewTransform) before serializing — otherwise it re-applies inside the
-    // standalone rasterized image on top of the viewBox math, corrupting the geometry
-    const clone = stage.cloneNode(true);
-    clone.style.transform = "";
-    clone.style.transformOrigin = "";
-    clone.setAttribute("width", String(w));
-    clone.setAttribute("height", String(h));
-    const svgText = new XMLSerializer().serializeToString(clone);
-    const svgUrl = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgText);
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = w; canvas.height = h;
-        const ctx = canvas.getContext("2d", { willReadFrequently: true });
-        ctx.drawImage(img, 0, 0, w, h);
-        resolve({ canvas, ctx, scaleX: w / bg.w, scaleY: h / bg.h });
-      };
-      img.onerror = () => resolve(null);
-      img.src = svgUrl;
-    });
-  }
+  stageContainer.addEventListener("pointermove", (e) => {
+    if (!colorSamplingActive) return;
+    sampleColorAt(e, false);
+  });
 
-  // ---- reconstructs this app's hue/sat wheel + separate K-slider model from a  ----
-  // sampled RGB pixel: HSV's value channel is exactly the app's (1 - k) darkening
-  // factor, so v -> k and the hue/sat at full value reproduce the same pixel exactly.
-  function rgbToWheelCmyk(r, g, b){
-    const hsv = rgbToHsv(r / 255, g / 255, b / 255);
-    const k = (1 - hsv.v) * 100;
-    const rgb1 = hsvToRgb(hsv.h, hsv.s, 1);
-    const c = (1 - rgb1.r) * 100, m = (1 - rgb1.g) * 100, y = (1 - rgb1.b) * 100;
-    return { c, m, y, k, hue: hsv.h, sat: hsv.s };
-  }
-
-  function applySampledColor(sample){
-    cmykCInput.value = Math.round(sample.c);
-    cmykMInput.value = Math.round(sample.m);
-    cmykYInput.value = Math.round(sample.y);
-    cmykKInput.value = Math.round(sample.k);
-    applyCmykFromInputs();
-  }
-
-  function sampleAtEvent(e){
-    if (!eyedropperSnapshot) return;
-    const stagePt = stagePointFromEvent(e);
-    const px = Math.floor(stagePt.x * eyedropperSnapshot.scaleX);
-    const py = Math.floor(stagePt.y * eyedropperSnapshot.scaleY);
-    if (px < 0 || py < 0 || px >= eyedropperSnapshot.canvas.width || py >= eyedropperSnapshot.canvas.height) return;
-    let data;
-    try {
-      data = eyedropperSnapshot.ctx.getImageData(px, py, 1, 1).data;
-    } catch (err) {
-      return; // tainted canvas (shouldn't happen: all layer art is embedded as data URLs)
-    }
-    if (data[3] === 0) return; // transparent pixel: nothing to sample here
-    applySampledColor(rgbToWheelCmyk(data[0], data[1], data[2]));
-  }
-
-  function stopEyedropper(commit){
-    if (!eyedropperActive) return;
-    eyedropperActive = false;
-    eyedropperSnapshot = null;
-    stageContainer.classList.remove("eyedropper-mode");
-    eyedropperBtn.classList.remove("active");
-    eyedropperBtn.setAttribute("aria-pressed", "false");
-    stageContainer.removeEventListener("pointermove", sampleAtEvent);
-    stageContainer.removeEventListener("pointerdown", eyedropperPointerDown, true);
-    window.removeEventListener("keydown", eyedropperKeyDown, true);
-    if (!commit && eyedropperPrevColor){
-      applySampledColor(eyedropperPrevColor);
-    }
-    eyedropperPrevColor = null;
-  }
-
-  function eyedropperPointerDown(e){
-    if (e.button !== 0) { stopEyedropper(false); return; }
+  // capture phase on the ancestor so this fires (and can stop the event) before it ever
+  // reaches #stage's own pointerdown listener, which would otherwise select/drag a layer.
+  stageContainer.addEventListener("pointerdown", (e) => {
+    if (!colorSamplingActive) return;
+    if (e.button !== 0) return;
     e.preventDefault();
     e.stopPropagation();
-    sampleAtEvent(e);
-    stopEyedropper(true);
-  }
+    sampleColorAt(e, true);
+  }, true);
 
-  function eyedropperKeyDown(e){
-    if (e.key === "Escape"){
+  stageContainer.addEventListener("pointerleave", () => {
+    if (!colorSamplingActive) return;
+    syncColorControls(); // preview only follows the pointer while it's over the canvas
+  });
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && colorSamplingActive){
       e.preventDefault();
-      stopEyedropper(false);
+      exitColorSampling(true);
     }
-  }
+  });
 
-  async function startEyedropper(){
-    const selected = getSelectedLayer();
-    if (!isColorableLayer(selected) || eyedropperActive) return;
-    const snapshot = await buildEyedropperSnapshot();
-    if (!snapshot) return;
-    eyedropperSnapshot = snapshot;
-    eyedropperPrevColor = { c: selected.color.c, m: selected.color.m, y: selected.color.y, k: selected.color.k };
-    eyedropperActive = true;
-    stageContainer.classList.add("eyedropper-mode");
-    eyedropperBtn.classList.add("active");
-    eyedropperBtn.setAttribute("aria-pressed", "true");
-    stageContainer.addEventListener("pointermove", sampleAtEvent);
-    stageContainer.addEventListener("pointerdown", eyedropperPointerDown, true);
-    window.addEventListener("keydown", eyedropperKeyDown, true);
-  }
-
-  eyedropperBtn.addEventListener("click", () => {
-    if (eyedropperActive) stopEyedropper(false);
-    else startEyedropper();
+  // ---- undo shortcut: Ctrl+Z (Cmd+Z on Mac) steps back one history entry ----
+  window.addEventListener("keydown", (e) => {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey || e.key.toLowerCase() !== "z") return;
+    const active = document.activeElement;
+    const tag = (active && active.tagName) || "";
+    if (tag === "TEXTAREA" || (tag === "INPUT" && ["text","number"].includes(active.type))) return;
+    e.preventDefault();
+    undoOneStep();
   });
 
   // ---- events: opacity (shared across image / text / shape layers) ----
   opacityRange.addEventListener("input", () => {
     const selected = getSelectedLayer();
     if (!selected) return;
+    beginHistoryChange();
     selected.opacity = parseFloat(opacityRange.value);
     opacityLabel.textContent = Math.round(selected.opacity) + "%";
     buildStage();
+  });
+  opacityRange.addEventListener("change", () => {
+    commitHistoryChange(() => `Changed opacity of layer ${layerLabel(getSelectedLayer())}`);
   });
 
   // ---- events: shape layers ----
@@ -2433,6 +3456,7 @@
     selected.shapeKind = shapeKindSelect.value;
     buildStage();
     syncTextControls();
+    recordHistory(`Changed style of layer ${layerLabel(selected)}`);
   });
 
   shapeFilledCheckbox.addEventListener("change", () => {
@@ -2441,14 +3465,19 @@
     selected.filled = shapeFilledCheckbox.checked;
     buildStage();
     syncTextControls();
+    recordHistory(`Changed style of layer ${layerLabel(selected)}`);
   });
 
   shapeStrokeWidthRange.addEventListener("input", () => {
     const selected = getSelectedLayer();
     if (!selected || selected.type !== "shape") return;
+    beginHistoryChange();
     selected.strokeWidth = parseFloat(shapeStrokeWidthRange.value);
     shapeStrokeWidthLabel.textContent = shapeStrokeWidthRange.value;
     buildStage();
+  });
+  shapeStrokeWidthRange.addEventListener("change", () => {
+    commitHistoryChange(() => `Changed style of layer ${layerLabel(getSelectedLayer())}`);
   });
 
   // ---- events: shape select (built-in shapes) ----
@@ -2456,11 +3485,27 @@
     const shape = BUILTIN_SHAPES[shapeSelect.value];
     if (!shape) return;
     currentShapeLabel = shape.label;
+    updatePreviewFadeUI();
     parseAndLoadBackground(shape.svg);
+    if (historyIndex === 0) updateStartEntry();
+    else recordHistory(`Changed panel to ${shape.label}`);
   });
 
   levelViewCheckbox.addEventListener("change", () => {
     levelView = levelViewCheckbox.checked;
+    buildStage();
+  });
+
+  previewFadeBtn.addEventListener("click", () => {
+    if (!isFadeEligibleShape()) return;
+    previewFadeOn = !previewFadeOn;
+    updatePreviewFadeUI();
+    buildStage();
+  });
+
+  previewCmykBtn.addEventListener("click", () => {
+    previewCmykOn = !previewCmykOn;
+    updatePreviewCmykUI();
     buildStage();
   });
 
@@ -2472,6 +3517,7 @@
     updateSelectedLayerTransform();
     syncZoomSlider();
     syncRotationSlider();
+    recordHistory(`Resized layer ${layerLabel(selected)}`);
   });
 
   removeImgBtn.addEventListener("click", () => {
@@ -2483,17 +3529,25 @@
   zoomRange.addEventListener("input", () => {
     const selected = getSelectedLayer();
     if (!selected) return;
+    beginHistoryChange();
     selected.xform.scale = (selected.fitScale || 1) * (parseFloat(zoomRange.value) / 100);
     zoomLabel.textContent = zoomRange.value + "%";
     updateSelectedLayerTransform();
+  });
+  zoomRange.addEventListener("change", () => {
+    commitHistoryChange(() => `Resized layer ${layerLabel(getSelectedLayer())}`);
   });
 
   rotRange.addEventListener("input", () => {
     const selected = getSelectedLayer();
     if (!selected) return;
+    beginHistoryChange();
     selected.xform.rot = parseFloat(rotRange.value);
     rotLabel.textContent = Math.round(selected.xform.rot) + "°";
     updateSelectedLayerTransform();
+  });
+  rotRange.addEventListener("change", () => {
+    commitHistoryChange(() => `Rotated layer ${layerLabel(getSelectedLayer())}`);
   });
 
   rotLeftBtn.addEventListener("click", () => {
@@ -2502,6 +3556,7 @@
     selected.xform.rot -= 15;
     updateSelectedLayerTransform();
     syncRotationSlider();
+    recordHistory(`Rotated layer ${layerLabel(selected)}`);
   });
   rotRightBtn.addEventListener("click", () => {
     const selected = getSelectedLayer();
@@ -2509,6 +3564,7 @@
     selected.xform.rot += 15;
     updateSelectedLayerTransform();
     syncRotationSlider();
+    recordHistory(`Rotated layer ${layerLabel(selected)}`);
   });
 
   guideCheckbox.addEventListener("change", () => {
@@ -2582,6 +3638,7 @@
     selected.xform.rot += (e.key === "]" ? step : -step);
     updateSelectedLayerTransform();
     syncRotationSlider();
+    recordHistory(`Rotated layer ${layerLabel(selected)}`);
   });
 
   window.addEventListener("resize", updateHandles);
@@ -2597,7 +3654,10 @@
     return `${timestamp}-${shapeSlug}${suffixPart}.${ext}`;
   }
 
-  function buildLayerVisual(layer){
+  // `applyCmykPreview` is only ever passed true from the live buildStage() render (see
+  // updatePreviewCmykUI/appendCmykPreviewDefs) — export paths call this with one argument,
+  // so the simulated CMYK color shift never leaks into exported files.
+  function buildLayerVisual(layer, applyCmykPreview){
     let el;
     if (layer.type === "text"){
       el = createTextGroup(layer);
@@ -2612,6 +3672,10 @@
       el.setAttribute("width", layer.naturalW);
       el.setAttribute("height", layer.naturalH);
       el.setAttribute("preserveAspectRatio", "none");
+      if (layer.flipX || layer.flipY){
+        el.setAttribute("transform", `scale(${layer.flipX ? -1 : 1} ${layer.flipY ? -1 : 1})`);
+      }
+      if (applyCmykPreview) el.setAttribute("filter", "url(#cmykPreviewFilter)");
     }
     const opacity = layer.opacity == null ? 100 : layer.opacity;
     if (opacity < 100) el.setAttribute("opacity", String(Math.max(0, Math.min(100, opacity)) / 100));
@@ -2625,7 +3689,11 @@
     return g;
   }
 
-  function buildClippedLayersSvg(){
+  // `useLevel` mirrors buildStage's levelGroup: when true and the shape has a usable
+  // levelTransform, the background + clipped layer content are rotated/rescaled together
+  // exactly as the on-screen "Level view" checkbox does — the transform is pre-calibrated
+  // to fit within the same bg.viewBox, so no other geometry here needs to change.
+  function buildClippedLayersSvg(useLevel){
     const outSvg = document.createElementNS(NS, "svg");
     outSvg.setAttribute("xmlns", NS);
     outSvg.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", XLINK);
@@ -2642,14 +3710,18 @@
     if (fontStyle1) defs.appendChild(fontStyle1);
     outSvg.appendChild(defs);
 
+    const levelG = document.createElementNS(NS, "g");
+    if (useLevel && bg.levelTransform) levelG.setAttribute("transform", bg.levelTransform.str);
+    outSvg.appendChild(levelG);
+
     const bgGroup = document.createElementNS(NS, "g");
     bg.bgClones.forEach((c) => bgGroup.appendChild(c.cloneNode(true)));
-    outSvg.appendChild(bgGroup);
+    levelG.appendChild(bgGroup);
 
     const clipG = document.createElementNS(NS, "g");
     clipG.setAttribute("clip-path", "url(#exportClip)");
     layers.forEach((layer) => clipG.appendChild(buildLayerGroup(layer)));
-    outSvg.appendChild(clipG);
+    levelG.appendChild(clipG);
 
     return outSvg;
   }
@@ -2660,20 +3732,32 @@
     return pts.map(([lx, ly]) => localToStage(layer.xform, lx, ly));
   }
 
-  function computeFullLayersBounds(){
+  // `matrix`, when given, is bg.levelTransform.matrix — the same transform the leveled
+  // render will apply to its content, so bounds are computed in that rotated space instead
+  // (otherwise a leveled render could clip layers that only overhang once rotated).
+  function computeFullLayersBounds(matrix){
     let minX = 0, minY = 0, maxX = bg.w, maxY = bg.h;
+    if (matrix){
+      minX = minY = Infinity; maxX = maxY = -Infinity;
+      [[0,0],[bg.w,0],[bg.w,bg.h],[0,bg.h]].forEach(([x,y]) => {
+        const p = applyMatrix(matrix, { x, y });
+        minX = Math.min(minX, p.x); minY = Math.min(minY, p.y);
+        maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y);
+      });
+    }
     layers.forEach((layer) => {
       layerCorners(layer).forEach((p) => {
-        minX = Math.min(minX, p.x);
-        minY = Math.min(minY, p.y);
-        maxX = Math.max(maxX, p.x);
-        maxY = Math.max(maxY, p.y);
+        const pt = matrix ? applyMatrix(matrix, p) : p;
+        minX = Math.min(minX, pt.x);
+        minY = Math.min(minY, pt.y);
+        maxX = Math.max(maxX, pt.x);
+        maxY = Math.max(maxY, pt.y);
       });
     });
     return { x:minX, y:minY, w:maxX-minX, h:maxY-minY };
   }
 
-  function buildFullLayersSvg(bounds){
+  function buildFullLayersSvg(bounds, useLevel){
     const outSvg = document.createElementNS(NS, "svg");
     outSvg.setAttribute("xmlns", NS);
     outSvg.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", XLINK);
@@ -2688,7 +3772,10 @@
       outSvg.appendChild(defs);
     }
 
-    layers.forEach((layer) => outSvg.appendChild(buildLayerGroup(layer)));
+    const levelG = document.createElementNS(NS, "g");
+    if (useLevel && bg.levelTransform) levelG.setAttribute("transform", bg.levelTransform.str);
+    outSvg.appendChild(levelG);
+    layers.forEach((layer) => levelG.appendChild(buildLayerGroup(layer)));
 
     return outSvg;
   }
@@ -2774,19 +3861,20 @@
   }
 
   // ---- export: clipped JPG (what shows through the shape) ----
-  function buildJPGBlob(cb){
-    const outSvg = buildClippedLayersSvg();
+  function buildJPGBlob(cb, useLevel){
+    const outSvg = buildClippedLayersSvg(useLevel);
     const longSide = Math.max(bg.w, bg.h);
     const exportScale = Math.max(1, Math.min(8, Math.round(2400 / longSide)));
     const canvasW = Math.max(1, Math.round(bg.w * exportScale));
     const canvasH = Math.max(1, Math.round(bg.h * exportScale));
-    rasterizeSvgToBlob(outSvg, canvasW, canvasH, { background:"#ffffff", mime:"image/jpeg", quality:0.75 }, cb);
+    rasterizeSvgToBlob(outSvg, canvasW, canvasH, { background:"#808080", mime:"image/jpeg", quality:0.75 }, cb);
   }
 
   // ---- export: full, unclipped layer stack as PNG, extended to cover every layer ----
-  function buildFullLayersPNGBlob(cb){
-    const bounds = computeFullLayersBounds();
-    const outSvg = buildFullLayersSvg(bounds);
+  function buildFullLayersPNGBlob(cb, useLevel){
+    const matrix = (useLevel && bg.levelTransform) ? bg.levelTransform.matrix : null;
+    const bounds = computeFullLayersBounds(matrix);
+    const outSvg = buildFullLayersSvg(bounds, useLevel);
     const longSide = Math.max(bounds.w, bounds.h);
     const exportScale = Math.max(1, Math.min(8, Math.round(3000 / longSide)));
     const canvasW = Math.max(1, Math.round(bounds.w * exportScale));
@@ -2829,13 +3917,139 @@
     return `layer-${layer.id}`;
   }
 
+  // shared by both the live <layers> block and each <history><entry>'s own <layers> block —
+  // `imageFile` is the already-resolved zip path for image layers (or null), and `fontInfo`
+  // is the already-resolved { filename, label } for a custom-font text layer (or null); both
+  // are resolved by the caller since the two contexts dedupe assets differently (see below).
+  function writeLayerXMLAttrs(doc, layer, index, imageFile, fontInfo){
+    const el = doc.createElement("layer");
+    el.setAttribute("index", String(index));
+    el.setAttribute("id", String(layer.id));
+    el.setAttribute("type", layer.type);
+    el.setAttribute("cx", String(layer.xform.cx));
+    el.setAttribute("cy", String(layer.xform.cy));
+    el.setAttribute("scale", String(layer.xform.scale));
+    el.setAttribute("rotation", String(layer.xform.rot));
+    el.setAttribute("opacity", String(layer.opacity == null ? 100 : layer.opacity));
+    el.setAttribute("naturalWidth", String(layer.naturalW));
+    el.setAttribute("naturalHeight", String(layer.naturalH));
+    if (imageFile) el.setAttribute("file", imageFile);
+
+    if (layer.type === "image"){
+      el.setAttribute("name", layer.name || "");
+      if (layer.flipX) el.setAttribute("flipX", "true");
+      if (layer.flipY) el.setAttribute("flipY", "true");
+      if (layer.origNaturalW != null){
+        el.setAttribute("origNaturalWidth", String(layer.origNaturalW));
+        el.setAttribute("origNaturalHeight", String(layer.origNaturalH));
+      }
+    } else if (layer.type === "shape"){
+      el.setAttribute("shapeKind", layer.shapeKind);
+      el.setAttribute("filled", String(!!layer.filled));
+      el.setAttribute("strokeWidth", String(layer.strokeWidth));
+      el.setAttribute("colorC", String(layer.color.c));
+      el.setAttribute("colorM", String(layer.color.m));
+      el.setAttribute("colorY", String(layer.color.y));
+      el.setAttribute("colorK", String(layer.color.k));
+    } else if (layer.type === "text"){
+      el.setAttribute("colorC", String(layer.color.c));
+      el.setAttribute("colorM", String(layer.color.m));
+      el.setAttribute("colorY", String(layer.color.y));
+      el.setAttribute("colorK", String(layer.color.k));
+      const isBuiltin = BUILTIN_FONTS.some((f) => f.value === layer.fontFamily);
+      if (isBuiltin){
+        el.setAttribute("fontSource", "builtin");
+        el.setAttribute("fontFamily", layer.fontFamily);
+      } else {
+        el.setAttribute("fontSource", "custom");
+        if (fontInfo){
+          el.setAttribute("fontFile", "fonts/" + fontInfo.filename);
+          el.setAttribute("fontLabel", fontInfo.label);
+        }
+      }
+      const contentEl = doc.createElement("content");
+      contentEl.appendChild(doc.createCDATASection(layer.text || ""));
+      el.appendChild(contentEl);
+    }
+    return el;
+  }
+
+  // resolves (creating if needed) the zip filename for a custom font family, reusing
+  // fontFilesMap across both the live layers and every history entry so each unique
+  // uploaded font is only written into fonts/ once regardless of how many places use it.
+  function resolveFontInfo(doc, zip, fontFilesMap, familyName, usedFontNames){
+    const isBuiltin = BUILTIN_FONTS.some((f) => f.value === familyName);
+    if (isBuiltin) return null;
+    let info = fontFilesMap.get(familyName);
+    if (info) return info;
+    const faces = customFonts[familyName];
+    if (!faces || !faces.length) return null;
+    const label = customFontLabels[familyName] || familyName;
+    const blob = dataURLtoBlob(faces[0].dataURL);
+    const ext = /otf/i.test(blob.type) ? "otf" : "ttf";
+    const filename = uniqueZipName(usedFontNames, familyName.replace(/[^a-z0-9-]+/gi, "_") + "." + ext);
+    zip.folder("fonts").file(filename, blob);
+    info = { filename, label };
+    fontFilesMap.set(familyName, info);
+    return info;
+  }
+
+  // history entries get their own image-asset pool (history-assets/), deduped by dataURL
+  // content so a layer's image that's unchanged across many history steps (the common case
+  // for drags/rotations/etc.) is only written once rather than once per entry.
+  function buildHistoryXML(doc, zip, fontFilesMap, usedFontNames){
+    const historyEl = doc.createElement("history");
+    historyEl.setAttribute("currentIndex", String(historyIndex));
+    const imageCache = new Map();
+    const usedHistNames = new Set();
+
+    historyStack.forEach((entry, idx) => {
+      const entryEl = doc.createElement("entry");
+      entryEl.setAttribute("index", String(idx));
+      entryEl.setAttribute("description", entry.desc || "");
+      if (entry.state.selectedLayerId != null) entryEl.setAttribute("selectedLayerId", String(entry.state.selectedLayerId));
+
+      const bgEl = doc.createElement("background");
+      bgEl.setAttribute("shape", entry.state.shapeKey || "");
+      bgEl.setAttribute("levelView", String(!!entry.state.levelView));
+      entryEl.appendChild(bgEl);
+
+      const layersEl = doc.createElement("layers");
+      entry.state.layers.forEach((layer, i) => {
+        let imageFile = null;
+        if (layer.type === "image" && layer.dataURL){
+          imageFile = imageCache.get(layer.dataURL);
+          if (!imageFile){
+            const blob = dataURLtoBlob(layer.dataURL);
+            const name = uniqueZipName(usedHistNames, `hist-${idx}-${i}.${extFromMime(blob.type)}`);
+            zip.folder("history-assets").file(name, blob);
+            imageFile = "history-assets/" + name;
+            imageCache.set(layer.dataURL, imageFile);
+          }
+        }
+        const fontInfo = layer.type === "text" ? resolveFontInfo(doc, zip, fontFilesMap, layer.fontFamily, usedFontNames) : null;
+        layersEl.appendChild(writeLayerXMLAttrs(doc, layer, i, imageFile, fontInfo));
+      });
+      entryEl.appendChild(layersEl);
+
+      const thumbEl = doc.createElement("thumbnail");
+      thumbEl.appendChild(doc.createCDATASection(entry.thumbnail || ""));
+      entryEl.appendChild(thumbEl);
+
+      historyEl.appendChild(entryEl);
+    });
+
+    return historyEl;
+  }
+
   // ---- export: project.xml — position/size/rotation/stacking data for every layer, plus ----
   // ---- which background shape was used, so the zip can be re-loaded exactly as exported. ----
-  function buildProjectXML(assetFilenames, fontFilesMap){
-    const doc = document.implementation.createDocument(null, "pmag30CustomizerProject", null);
+  function buildProjectXML(assetFilenames, fontFilesMap, zip){
+    const doc = document.implementation.createDocument(null, "pmagCustomizerProject", null);
     const root = doc.documentElement;
-    root.setAttribute("version", "1");
+    root.setAttribute("version", "2");
     root.setAttribute("exportedAt", new Date().toISOString());
+    root.setAttribute("layerIdCounter", String(layerIdCounter));
 
     const bgEl = doc.createElement("background");
     bgEl.setAttribute("shape", shapeSelect.value);
@@ -2845,63 +4059,36 @@
 
     const layersEl = doc.createElement("layers");
     layers.forEach((layer, i) => {
-      const el = doc.createElement("layer");
-      el.setAttribute("index", String(i));
-      el.setAttribute("type", layer.type);
-      el.setAttribute("cx", String(layer.xform.cx));
-      el.setAttribute("cy", String(layer.xform.cy));
-      el.setAttribute("scale", String(layer.xform.scale));
-      el.setAttribute("rotation", String(layer.xform.rot));
-      el.setAttribute("opacity", String(layer.opacity == null ? 100 : layer.opacity));
-      el.setAttribute("naturalWidth", String(layer.naturalW));
-      el.setAttribute("naturalHeight", String(layer.naturalH));
       const fname = assetFilenames.get(layer.id);
-      if (fname) el.setAttribute("file", "original-images/" + fname);
-
-      if (layer.type === "image"){
-        el.setAttribute("name", layer.name || "");
-        if (layer.origNaturalW != null){
-          el.setAttribute("origNaturalWidth", String(layer.origNaturalW));
-          el.setAttribute("origNaturalHeight", String(layer.origNaturalH));
-        }
-      } else if (layer.type === "shape"){
-        el.setAttribute("shapeKind", layer.shapeKind);
-        el.setAttribute("filled", String(!!layer.filled));
-        el.setAttribute("strokeWidth", String(layer.strokeWidth));
-        el.setAttribute("colorC", String(layer.color.c));
-        el.setAttribute("colorM", String(layer.color.m));
-        el.setAttribute("colorY", String(layer.color.y));
-        el.setAttribute("colorK", String(layer.color.k));
-      } else if (layer.type === "text"){
-        el.setAttribute("colorC", String(layer.color.c));
-        el.setAttribute("colorM", String(layer.color.m));
-        el.setAttribute("colorY", String(layer.color.y));
-        el.setAttribute("colorK", String(layer.color.k));
-        const isBuiltin = BUILTIN_FONTS.some((f) => f.value === layer.fontFamily);
-        if (isBuiltin){
-          el.setAttribute("fontSource", "builtin");
-          el.setAttribute("fontFamily", layer.fontFamily);
-        } else {
-          el.setAttribute("fontSource", "custom");
-          const info = fontFilesMap.get(layer.fontFamily);
-          if (info){
-            el.setAttribute("fontFile", "fonts/" + info.filename);
-            el.setAttribute("fontLabel", info.label);
-          }
-        }
-        const contentEl = doc.createElement("content");
-        contentEl.appendChild(doc.createCDATASection(layer.text || ""));
-        el.appendChild(contentEl);
-      }
-      layersEl.appendChild(el);
+      const imageFile = fname ? "original-images/" + fname : null;
+      const fontInfo = layer.type === "text" && !BUILTIN_FONTS.some((f) => f.value === layer.fontFamily)
+        ? fontFilesMap.get(layer.fontFamily) : null;
+      layersEl.appendChild(writeLayerXMLAttrs(doc, layer, i, imageFile, fontInfo));
     });
     root.appendChild(layersEl);
+
+    if (zip && historyStack.length){
+      const usedFontNames = new Set(Array.from(fontFilesMap.values()).map((v) => v.filename));
+      root.appendChild(buildHistoryXML(doc, zip, fontFilesMap, usedFontNames));
+    }
 
     return '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(doc);
   }
 
-  // ---- export: zip containing the JPG mockup, full-layers PNG, a PNG of each individual ----
-  // ---- layer, project.xml (position/size/stacking + background shape), and originals    ----
+  // wraps a callback-style blob builder (buildJPGBlob / buildFullLayersPNGBlob, both
+  // `(cb, useLevel)`) as a promise so exportZip can request the normal and level-view
+  // renders together via Promise.all instead of nesting a callback per variant.
+  function blobPromise(builder, useLevel){
+    return new Promise((resolve, reject) => {
+      builder((blob, err) => {
+        if (err) reject(new Error(err)); else resolve(blob);
+      }, useLevel);
+    });
+  }
+
+  // ---- export: zip containing the JPG mockup (in both normal and level views, when the ----
+  // ---- shape supports it), the full-layers PNG, a PNG of each individual layer,         ----
+  // ---- project.xml (position/size/stacking + background shape), and originals           ----
   function exportZip(){
     if (!layers.length || !bg){
       alert("Add at least one image layer first.");
@@ -2909,6 +4096,7 @@
     }
     downloadZipBtn.disabled = true;
     downloadZipBtn.textContent = "Preparing…";
+    saveZipMenuBtn.disabled = true;
 
     // make sure every Google Font actually used by a text layer is embedded as a data URI
     // before rasterizing — otherwise the isolated export context can't fetch it and the
@@ -2920,21 +4108,25 @@
       if (def && def.google) neededFamilies.add(def.google);
     });
 
-    Promise.all(Array.from(neededFamilies).map(ensureGoogleFontEmbedded)).then(() => {
-      buildJPGBlob((jpgBlob, jpgErr) => {
-        if (jpgErr){ alert(jpgErr); resetDownloadZipBtn(); return; }
-        buildFullLayersPNGBlob((pngBlob, pngErr) => {
-          if (pngErr){ alert(pngErr); resetDownloadZipBtn(); return; }
+    const hasLevelView = !!bg.levelTransform;
 
-          const nonImageLayers = layers.filter((l) => l.type !== "image");
-          Promise.all(nonImageLayers.map((layer) => new Promise((resolve, reject) => {
-            buildSingleLayerPNGBlob(layer, (blob, err) => {
-              if (err) reject(new Error(err)); else resolve({ layer, blob });
-            });
-          }))).then((rendered) => {
+    Promise.all(Array.from(neededFamilies).map(ensureGoogleFontEmbedded)).then(() => {
+      return Promise.all([
+        blobPromise(buildJPGBlob, false),
+        blobPromise(buildFullLayersPNGBlob, false),
+        hasLevelView ? blobPromise(buildJPGBlob, true) : Promise.resolve(null)
+      ]);
+    }).then(([jpgBlob, pngBlob, levelJpgBlob]) => {
+      const nonImageLayers = layers.filter((l) => l.type !== "image");
+      return Promise.all(nonImageLayers.map((layer) => new Promise((resolve, reject) => {
+        buildSingleLayerPNGBlob(layer, (blob, err) => {
+          if (err) reject(new Error(err)); else resolve({ layer, blob });
+        });
+      }))).then((rendered) => {
             const zip = new JSZip();
             zip.file(buildExportFilename("jpg"), jpgBlob);
             zip.file(buildExportFilename("png", "full-layers"), pngBlob);
+            if (levelJpgBlob) zip.file(buildExportFilename("jpg", "level-view"), levelJpgBlob);
 
             const originalsFolder = zip.folder("original-images");
             const usedNames = new Set();
@@ -2974,7 +4166,7 @@
               fontFilesMap.set(layer.fontFamily, { filename, label });
             });
 
-            zip.file("project.xml", buildProjectXML(assetFilenames, fontFilesMap));
+            zip.file("project.xml", buildProjectXML(assetFilenames, fontFilesMap, zip));
 
             zip.generateAsync({ type: "blob" }).then((zipBlob) => {
               triggerDownload(zipBlob, buildExportFilename("zip"));
@@ -2983,21 +4175,39 @@
               alert("Export failed while creating the zip file.");
               resetDownloadZipBtn();
             });
-          }).catch(() => {
-            alert("Export failed while rendering one of the layers.");
-            resetDownloadZipBtn();
           });
-        });
-      });
+    }).catch((err) => {
+      alert(err && err.message ? err.message : "Export failed while rendering one of the layers.");
+      resetDownloadZipBtn();
     });
   }
 
   function resetDownloadZipBtn(){
     downloadZipBtn.disabled = layers.length === 0;
     downloadZipBtn.textContent = "Download ZIP";
+    saveZipMenuBtn.disabled = layers.length === 0;
   }
 
   downloadZipBtn.addEventListener("click", exportZip);
+  saveZipMenuBtn.addEventListener("click", exportZip);
+
+  // ---- light/dark theme toggle (defaults to dark; see the inline script in <head> ----
+  // ---- that applies the saved/default theme before first paint to avoid a flash)   ----
+  function applyTheme(theme){
+    document.documentElement.setAttribute("data-theme", theme);
+    const isDark = theme === "dark";
+    themeIconMoon.style.display = isDark ? "" : "none";
+    themeIconSun.style.display = isDark ? "none" : "";
+    const label = isDark ? "Switch to light theme" : "Switch to dark theme";
+    themeToggleBtn.title = label;
+    themeToggleBtn.setAttribute("aria-label", label);
+  }
+  applyTheme(document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark");
+  themeToggleBtn.addEventListener("click", () => {
+    const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    applyTheme(next);
+    try{ localStorage.setItem("pmag30CustomizerTheme", next); }catch(e){ /* ignore */ }
+  });
 
   // ---- import: re-create the editor from a previously exported project zip ----
   function mimeFromExt(path){
@@ -3014,8 +4224,12 @@
 
   // builds one layer object (without a runtime id) from a <layer> element of project.xml,
   // resolving any referenced asset (image data / custom font file) out of the zip first.
+  // reads the "file" attribute for the image path — its value already disambiguates live
+  // vs. history-owned assets via folder prefix ("original-images/" vs "history-assets/"),
+  // so both contexts share the same attribute name.
   function buildLayerFromXML(el, zip, fontImportCache){
     const type = el.getAttribute("type");
+    const idAttr = el.hasAttribute("id") ? parseInt(el.getAttribute("id"), 10) : null;
     const xform = {
       cx: parseFloat(el.getAttribute("cx")) || 0,
       cy: parseFloat(el.getAttribute("cy")) || 0,
@@ -3032,10 +4246,13 @@
         const origW = el.hasAttribute("origNaturalWidth") ? parseFloat(el.getAttribute("origNaturalWidth")) : naturalW;
         const origH = el.hasAttribute("origNaturalHeight") ? parseFloat(el.getAttribute("origNaturalHeight")) : naturalH;
         return {
+          id: idAttr,
           type: "image",
           name: el.getAttribute("name") || "image.png",
           naturalW, naturalH,
           origNaturalW: origW, origNaturalH: origH,
+          flipX: el.getAttribute("flipX") === "true",
+          flipY: el.getAttribute("flipY") === "true",
           dataURL,
           opacity,
           xform,
@@ -3053,6 +4270,7 @@
 
     if (type === "shape"){
       return Promise.resolve({
+        id: idAttr,
         type: "shape",
         shapeKind: el.getAttribute("shapeKind") || "rectangle",
         filled: el.getAttribute("filled") !== "false",
@@ -3068,6 +4286,7 @@
     if (type === "text"){
       const contentEl = el.querySelector("content");
       const layer = {
+        id: idAttr,
         type: "text",
         text: contentEl ? contentEl.textContent : "",
         color, fillColor,
@@ -3103,17 +4322,20 @@
     return Promise.resolve(null);
   }
 
-  function applyImportedProject(shapeValue, wantLevelView, newLayers){
+  function applyImportedProject(shapeValue, wantLevelView, newLayers, savedCounter){
     const shape = BUILTIN_SHAPES[shapeValue] || BUILTIN_SHAPES.left;
     currentShapeLabel = shape.label;
     shapeSelect.value = BUILTIN_SHAPES[shapeValue] ? shapeValue : "left";
+    updatePreviewFadeUI();
     parseAndLoadBackground(shape.svg);
 
     levelView = !!wantLevelView && !levelViewCheckbox.disabled;
     levelViewCheckbox.checked = levelView;
 
+    if (savedCounter != null) layerIdCounter = Math.max(layerIdCounter, savedCounter);
     layers = newLayers.map((l) => {
-      l.id = ++layerIdCounter;
+      if (l.id == null) l.id = ++layerIdCounter;
+      else layerIdCounter = Math.max(layerIdCounter, l.id);
       if (bg) l.fitScale = Math.max(bg.clipBBoxRect.w/l.naturalW, bg.clipBBoxRect.h/l.naturalH) || 1;
       return l;
     });
@@ -3128,6 +4350,26 @@
     syncTextControls();
   }
 
+  // parses a saved <history><entry> element back into a { desc, thumbnail, state } entry —
+  // its layers' "file" attributes point into history-assets/ rather than original-images/,
+  // but buildLayerFromXML doesn't need to know the difference (see its comment above).
+  function buildHistoryEntryFromXML(entryEl, zip, fontImportCache){
+    const entryLayerEls = Array.from(entryEl.querySelectorAll(":scope > layers > layer"));
+    const entryBgEl = entryEl.querySelector(":scope > background");
+    const thumbEl = entryEl.querySelector(":scope > thumbnail");
+    return Promise.all(entryLayerEls.map((el) => buildLayerFromXML(el, zip, fontImportCache)))
+      .then((entryLayers) => ({
+        desc: entryEl.getAttribute("description") || "",
+        thumbnail: thumbEl ? thumbEl.textContent : null,
+        state: {
+          shapeKey: entryBgEl ? entryBgEl.getAttribute("shape") : "left",
+          levelView: entryBgEl ? entryBgEl.getAttribute("levelView") === "true" : false,
+          selectedLayerId: entryEl.hasAttribute("selectedLayerId") ? parseInt(entryEl.getAttribute("selectedLayerId"), 10) : null,
+          layers: entryLayers.filter(Boolean)
+        }
+      }));
+  }
+
   function importProjectZip(file){
     if (!file) return;
     if (layers.length && !confirm("Loading this project will replace your current layers. Continue?")) return;
@@ -3139,16 +4381,39 @@
         const doc = new DOMParser().parseFromString(xmlText, "application/xml");
         if (doc.querySelector("parsererror")) throw new Error("Couldn't parse project.xml in that zip.");
         const root = doc.documentElement;
-        const bgEl = root.querySelector("background");
+        const bgEl = root.querySelector(":scope > background");
         const shapeValue = bgEl ? bgEl.getAttribute("shape") : null;
         const wantLevelView = bgEl ? bgEl.getAttribute("levelView") === "true" : false;
-        const layerEls = Array.from(root.querySelectorAll("layers > layer"));
+        const savedCounterAttr = root.getAttribute("layerIdCounter");
+        const savedCounter = savedCounterAttr != null ? parseInt(savedCounterAttr, 10) : null;
+        const layerEls = Array.from(root.querySelectorAll(":scope > layers > layer"));
         const fontImportCache = new Map();
-        return Promise.all(layerEls.map((el) => buildLayerFromXML(el, zip, fontImportCache)))
-          .then((newLayers) => ({ shapeValue, wantLevelView, newLayers: newLayers.filter(Boolean) }));
+
+        const layersPromise = Promise.all(layerEls.map((el) => buildLayerFromXML(el, zip, fontImportCache)))
+          .then((newLayers) => newLayers.filter(Boolean));
+
+        const historyEl = root.querySelector(":scope > history");
+        const historyPromise = historyEl
+          ? Promise.all(Array.from(historyEl.querySelectorAll(":scope > entry")).map((entryEl) => buildHistoryEntryFromXML(entryEl, zip, fontImportCache)))
+            .then((entries) => ({
+              entries,
+              currentIndex: historyEl.hasAttribute("currentIndex") ? parseInt(historyEl.getAttribute("currentIndex"), 10) : entries.length - 1
+            }))
+          : Promise.resolve(null);
+
+        return Promise.all([layersPromise, historyPromise]).then(([newLayers, historyData]) => ({
+          shapeValue, wantLevelView, newLayers, savedCounter, historyData
+        }));
       });
-    }).then(({ shapeValue, wantLevelView, newLayers }) => {
-      applyImportedProject(shapeValue, wantLevelView, newLayers);
+    }).then(({ shapeValue, wantLevelView, newLayers, savedCounter, historyData }) => {
+      applyImportedProject(shapeValue, wantLevelView, newLayers, savedCounter);
+      if (historyData && historyData.entries.length){
+        historyStack = historyData.entries;
+        historyIndex = Math.max(0, Math.min(historyData.currentIndex, historyStack.length - 1));
+        renderHistoryPanel();
+      } else {
+        resetHistoryForFreshLoad("Loaded project");
+      }
     }).catch((err) => {
       console.error(err);
       alert("Couldn't load that project zip. " + (err && err.message ? err.message : ""));
@@ -3161,6 +4426,38 @@
     const file = e.target.files && e.target.files[0];
     importProjectZip(file);
     projectZipInput.value = "";
+  });
+
+  // ---- menu bar: File menu ----
+  const fileMenu = document.getElementById("fileMenu");
+  const fileMenuBtn = document.getElementById("fileMenuBtn");
+  const addImageMenuItem = document.getElementById("addImageMenuItem");
+  const loadProjectZipMenuItem = document.getElementById("loadProjectZipMenuItem");
+
+  function closeAllMenus(){
+    document.querySelectorAll(".menu.open").forEach((m) => m.classList.remove("open"));
+    fileMenuBtn.setAttribute("aria-expanded", "false");
+  }
+  fileMenuBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const willOpen = !fileMenu.classList.contains("open");
+    closeAllMenus();
+    if (willOpen){
+      fileMenu.classList.add("open");
+      fileMenuBtn.setAttribute("aria-expanded", "true");
+    }
+  });
+  addImageMenuItem.addEventListener("click", () => {
+    closeAllMenus();
+    imageInput.click();
+  });
+  loadProjectZipMenuItem.addEventListener("click", () => {
+    closeAllMenus();
+    projectZipInput.click();
+  });
+  document.addEventListener("click", () => closeAllMenus());
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeAllMenus();
   });
 
   projectZipDropzone.addEventListener("click", () => projectZipInput.click());
@@ -3203,10 +4500,13 @@
 
   shapeSelect.value = "left";
   currentShapeLabel = BUILTIN_SHAPES.left.label;
+  updatePreviewFadeUI();
+  updatePreviewCmykUI();
   parseAndLoadBackground(BUILTIN_SHAPES.left.svg);
   renderLayerList();
   updateControlsEnabled();
   syncTextControls();
+  resetHistoryForFreshLoad("Start");
 })();
 </script>
 </body>
