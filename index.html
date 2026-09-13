@@ -2265,50 +2265,87 @@
     }
     defs.appendChild(edgeMask);
 
-    // warp + lighten/desaturate filter applied to the (masked) distorted overlay copy
-    const filter = document.createElementNS(NS, "filter");
-    filter.id = "edgeFadeDistortFilter";
-    filter.setAttribute("x", "-40%"); filter.setAttribute("y", "-30%");
-    filter.setAttribute("width", "180%"); filter.setAttribute("height", "160%");
-    filter.setAttribute("color-interpolation-filters", "sRGB");
+    // Two filter variants for the (masked) distorted overlay copy, sharing the same
+    // warp: `edgeFadeDistortFilter` (plain) is the original edge-fade look — warp + slight
+    // blur + a flat neutral lighten — used for color images, shapes, and text, none of
+    // which are affected by the CMYK-registration issue below. `edgeFadeDistortFilterGray`
+    // adds the extra resolution-loss blur and a blue-leaning tint, and is used only for
+    // image layers detected as grayscale/monochrome (see computeIsGrayscaleFromImageEl):
+    // real "black" on a CMYK press is C+M+Y+K overprinted, not a true black ink, so as
+    // density drops out on the curve the registration doesn't stay perfectly neutral — it
+    // reads with a faint blue cast and softer detail. That's only meaningful on art that's
+    // supposed to be neutral gray/black to begin with; a color photo's own hues would mask
+    // it anyway, so it's left with the plain fade instead of guessing at a tint.
+    function buildEdgeFadeFilter(id, grayscale){
+      const filter = document.createElementNS(NS, "filter");
+      filter.id = id;
+      filter.setAttribute("x", "-40%"); filter.setAttribute("y", "-30%");
+      filter.setAttribute("width", "180%"); filter.setAttribute("height", "160%");
+      filter.setAttribute("color-interpolation-filters", "sRGB");
 
-    const turbulence = document.createElementNS(NS, "feTurbulence");
-    turbulence.setAttribute("type", "fractalNoise");
-    turbulence.setAttribute("baseFrequency", "0.9 0.05");
-    turbulence.setAttribute("numOctaves", "2");
-    turbulence.setAttribute("seed", "7");
-    turbulence.setAttribute("result", "noise");
-    filter.appendChild(turbulence);
+      const turbulence = document.createElementNS(NS, "feTurbulence");
+      turbulence.setAttribute("type", "fractalNoise");
+      turbulence.setAttribute("baseFrequency", "0.9 0.05");
+      turbulence.setAttribute("numOctaves", "2");
+      turbulence.setAttribute("seed", "7");
+      turbulence.setAttribute("result", "noise");
+      filter.appendChild(turbulence);
 
-    const displace = document.createElementNS(NS, "feDisplacementMap");
-    displace.setAttribute("in", "SourceGraphic");
-    displace.setAttribute("in2", "noise");
-    displace.setAttribute("scale", String(Math.max(2, fadeUnits * 0.9)));
-    displace.setAttribute("xChannelSelector", "R");
-    displace.setAttribute("yChannelSelector", "G");
-    displace.setAttribute("result", "displaced");
-    filter.appendChild(displace);
+      const displace = document.createElementNS(NS, "feDisplacementMap");
+      displace.setAttribute("in", "SourceGraphic");
+      displace.setAttribute("in2", "noise");
+      displace.setAttribute("scale", String(Math.max(2, fadeUnits * 0.9)));
+      displace.setAttribute("xChannelSelector", "R");
+      displace.setAttribute("yChannelSelector", "G");
+      displace.setAttribute("result", "displaced");
+      filter.appendChild(displace);
 
-    const blur = document.createElementNS(NS, "feGaussianBlur");
-    blur.setAttribute("in", "displaced");
-    blur.setAttribute("stdDeviation", String(Math.max(0.5, fadeUnits * 0.35)));
-    blur.setAttribute("result", "blurred");
-    filter.appendChild(blur);
+      const blur = document.createElementNS(NS, "feGaussianBlur");
+      blur.setAttribute("in", "displaced");
+      blur.setAttribute("stdDeviation", String(Math.max(0.5, fadeUnits * 0.35)));
+      blur.setAttribute("result", "blurred");
+      filter.appendChild(blur);
 
-    // lighten + pull each channel toward the others (desaturate) to read as reduced,
-    // grayed-out ink density — a stylized stand-in for CMYK dot gain loss on a curve.
-    const fadeMatrix = document.createElementNS(NS, "feColorMatrix");
-    fadeMatrix.setAttribute("in", "blurred");
-    fadeMatrix.setAttribute("type", "matrix");
-    fadeMatrix.setAttribute("values",
-      "0.72 0.14 0.10 0 0.16 " +
-      "0.10 0.72 0.14 0 0.16 " +
-      "0.14 0.10 0.72 0 0.16 " +
-      "0    0    0    1 0"
-    );
-    filter.appendChild(fadeMatrix);
+      let colorMatrixIn = "blurred";
+      if (grayscale){
+        // simulated resolution loss: wrapping around the curved edge stretches that same
+        // printed detail over more physical substrate, so effective resolution there drops
+        // to roughly 75% of the flat-panel normal — extra softening on top of the warp's
+        // own blur (an additional stdDeviation of fadeUnits*(1/0.75 - 1), so detail at 75%
+        // resolution reads about a third softer than full-resolution detail).
+        const RES_LOSS_PCT = 0.75;
+        const resBlur = document.createElementNS(NS, "feGaussianBlur");
+        resBlur.setAttribute("in", "blurred");
+        resBlur.setAttribute("stdDeviation", String(Math.max(0.5, fadeUnits * (1 / RES_LOSS_PCT - 1))));
+        resBlur.setAttribute("result", "resBlurred");
+        filter.appendChild(resBlur);
+        colorMatrixIn = "resBlurred";
+      }
 
-    defs.appendChild(filter);
+      // lighten + pull each channel toward the others (desaturate) to read as reduced ink
+      // density — a stylized stand-in for CMYK dot gain loss on a curve. The grayscale
+      // variant's offsets are deliberately uneven (blue held slightly up, green held
+      // slightly back, red left near-neutral) for the faint blue cast described above; the
+      // plain variant keeps a flat neutral offset so color content's hues are untouched.
+      const fadeMatrix = document.createElementNS(NS, "feColorMatrix");
+      fadeMatrix.setAttribute("in", colorMatrixIn);
+      fadeMatrix.setAttribute("type", "matrix");
+      fadeMatrix.setAttribute("values", grayscale ?
+        "0.72 0.14 0.10 0 0.155 " +
+        "0.10 0.72 0.14 0 0.130 " +
+        "0.14 0.10 0.72 0 0.195 " +
+        "0    0    0    1 0"
+        :
+        "0.72 0.14 0.10 0 0.16 " +
+        "0.10 0.72 0.14 0 0.16 " +
+        "0.14 0.10 0.72 0 0.16 " +
+        "0    0    0    1 0"
+      );
+      filter.appendChild(fadeMatrix);
+      defs.appendChild(filter);
+    }
+    buildEdgeFadeFilter("edgeFadeDistortFilter", false);
+    buildEdgeFadeFilter("edgeFadeDistortFilterGray", true);
   }
 
   // ---- building the visible stage ----
@@ -2367,10 +2404,14 @@
     // edge-fade band (see appendEdgeFadeDefs) — drawn on top of the sharp layers above.
     if (fadePreviewActive){
       const fadeOverlay = document.createElementNS(NS, "g");
-      fadeOverlay.setAttribute("filter", "url(#edgeFadeDistortFilter)");
       fadeOverlay.setAttribute("mask", "url(#edgeFadeMask)");
       layers.forEach((layer) => {
+        // only genuinely grayscale/monochrome images get the CMYK-registration tint +
+        // resolution-loss variant; color images, shapes, and text get the plain warp/lighten
+        // (see buildEdgeFadeFilter in appendEdgeFadeDefs)
+        const isGray = layer.type === "image" && layer.isGrayscaleImage;
         const layerG = document.createElementNS(NS, "g");
+        layerG.setAttribute("filter", isGray ? "url(#edgeFadeDistortFilterGray)" : "url(#edgeFadeDistortFilter)");
         layerG.setAttribute("transform", transformString(layer.xform));
         layerG.appendChild(buildLayerVisual(layer, previewCmykOn && layer.type === "image"));
         fadeOverlay.appendChild(layerG);
@@ -2970,6 +3011,41 @@
     recordHistory(`Added layer ${layerLabel(layer)}`);
   }
 
+  // ---- classify an image layer as grayscale/monochrome vs. color, once, at load time —
+  // used by the edge-fade preview (see appendEdgeFadeDefs) to decide whether that image
+  // gets the CMYK-registration tint + resolution-loss treatment or the plain fade.
+  const GRAYSCALE_CHROMA_THRESHOLD = 10; // avg max-min channel spread (0-255) across sampled pixels
+  function computeIsGrayscaleFromImageEl(imgEl){
+    try {
+      const SIZE = 32;
+      const canvas = document.createElement("canvas");
+      canvas.width = SIZE; canvas.height = SIZE;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(imgEl, 0, 0, SIZE, SIZE);
+      const data = ctx.getImageData(0, 0, SIZE, SIZE).data;
+      let total = 0, count = 0;
+      for (let i = 0; i < data.length; i += 4){
+        if (data[i + 3] < 16) continue; // skip near-transparent samples
+        const r = data[i], g = data[i + 1], b = data[i + 2];
+        total += Math.max(r, g, b) - Math.min(r, g, b);
+        count++;
+      }
+      if (!count) return false;
+      return (total / count) <= GRAYSCALE_CHROMA_THRESHOLD;
+    } catch (err) {
+      return false; // tainted/unreadable canvas — treat as color (no distortion) rather than guess
+    }
+  }
+
+  function computeIsGrayscaleFromDataURL(dataURL){
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(computeIsGrayscaleFromImageEl(img));
+      img.onerror = () => resolve(false);
+      img.src = dataURL;
+    });
+  }
+
   // ---- events: image upload (adds one layer per selected file) ----
   function addImageFiles(fileList){
     const files = Array.from(fileList || []).filter((f) => f.type && f.type.startsWith("image/"));
@@ -2992,6 +3068,7 @@
       origNaturalW: tmp.naturalWidth || 300,
       origNaturalH: tmp.naturalHeight || 300,
       dataURL,
+      isGrayscaleImage: computeIsGrayscaleFromImageEl(tmp),
       opacity: 100,
       xform: { cx:0, cy:0, scale:1, rot:0 },
       fitScale: 1
@@ -4245,7 +4322,7 @@
         if (!dataURL) return null;
         const origW = el.hasAttribute("origNaturalWidth") ? parseFloat(el.getAttribute("origNaturalWidth")) : naturalW;
         const origH = el.hasAttribute("origNaturalHeight") ? parseFloat(el.getAttribute("origNaturalHeight")) : naturalH;
-        return {
+        return computeIsGrayscaleFromDataURL(dataURL).then((isGrayscaleImage) => ({
           id: idAttr,
           type: "image",
           name: el.getAttribute("name") || "image.png",
@@ -4254,10 +4331,11 @@
           flipX: el.getAttribute("flipX") === "true",
           flipY: el.getAttribute("flipY") === "true",
           dataURL,
+          isGrayscaleImage,
           opacity,
           xform,
           fitScale: 1
-        };
+        }));
       });
     }
 
